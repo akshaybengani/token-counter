@@ -70,6 +70,19 @@ The split above is real, and it's lopsided because my usage is. Each small dial 
 
 Every colour is defined once, in `Palette.swift`, with a light and a dark value: the hues stay luminous on a dark ground and sit a step deeper on a light one. Red is reserved for over-target and isn't used for anything else.
 
+## A day's total is written continuously, not at midnight
+
+The obvious way to keep a daily history is to write the day's figure when the day ends. That loses a day whenever the Mac is asleep or shut down at midnight, which for a laptop is most nights.
+
+So today's row is rewritten on every scan instead. The write is an upsert keyed by the day, which makes it idempotent: scanning twice in a minute leaves one row, and when the clock passes midnight yesterday's row is already complete and today's simply starts. Nothing has to happen at midnight for the history to be right.
+
+Two things the chart draws that a simpler store would flatten:
+
+- **A day the app never ran is not a quiet day.** An idle day records zero; a day with the app shut records nothing. The first is a bar of height zero, the second is a shaded column, and the summary line counts them separately.
+- **A provider that reports no token counts is never stored as zero.** Copilot is left out of the row entirely rather than written as a zero it did not earn.
+
+History lives in `~/Library/Application Support/TokenCounter/history.json`, holds up to 400 days, and is a few hundred bytes per day. Days before you first ran the app are not in it, and cannot be: the providers only ever count the current day, so there is nothing to backfill from without re-reading every transcript.
+
 ## The hard cases
 
 ### Codex counts upward, and says everything twice
@@ -186,6 +199,8 @@ Both databases are opened with `SQLITE_OPEN_READONLY`, since the applications th
 | `Sources/TokenCounter/Providers/CursorProvider.swift` | Cursor's SQLite database |
 | `Sources/TokenCounter/Providers/CopilotProvider.swift` | Copilot, which reports an absence rather than a figure |
 | `Sources/TokenCounter/UsageStore.swift` | Aggregation, targets, thresholds, and the refresh timer |
+| `Sources/TokenCounter/History.swift` | The daily store: upsert, retention, unobserved days |
+| `Sources/TokenCounter/AnalyticsView.swift` | The daily bar chart |
 | `Sources/TokenCounter/Palette.swift` | Every colour in the app, light and dark |
 | `Sources/TokenCounter/RingView.swift` | The ring, either one arc coloured by progress or split by provider |
 | `Sources/TokenCounter/PanelView.swift` | Panel body for both display modes |
@@ -221,9 +236,9 @@ Turn on **Open at login** in settings to have it start with your Mac. That uses 
 
 Three layers, because the figures fail quietly rather than loudly.
 
-**24 unit tests** over the provider rules, run with `swift test`. They use fixtures in the repository, never your own transcripts, so they can exercise cases your data happens not to contain: the same call logged in two transcripts, a Codex total that drops mid-session, a Gemini prompt that is entirely cache, a file ending mid-line, a record one second either side of local midnight, and a day rollover.
+**31 unit tests** over the provider rules and the daily store, run with `swift test`. They use fixtures in the repository, never your own transcripts, so they can exercise cases your data happens not to contain: the same call logged in two transcripts, a Codex total that drops mid-session, a Gemini prompt that is entirely cache, a file ending mid-line, a record one second either side of local midnight, and a day rollover.
 
-**A mutation check**, `python3 tools/mutation-check.py`, which breaks each guard in turn and requires a named test to go red. A suite that passes proves nothing on its own; this is what shows it can fail.
+**A mutation check**, `python3 tools/mutation-check.py`, which breaks each of 11 guards in turn and requires a named test to go red. A suite that passes proves nothing on its own; this is what shows it can fail.
 
 ```bash
 ./tools/check.sh                    # build, tests, mutation check, harness
@@ -232,8 +247,8 @@ Three layers, because the figures fail quietly rather than loudly.
 Or one at a time:
 
 ```bash
-swift test                          # 24 tests
-python3 tools/mutation-check.py     # 8 guards, each must be caught
+swift test                          # 31 tests
+python3 tools/mutation-check.py     # 11 guards, each must be caught
 ./tools/verify/run.sh 2025-01-01    # every provider against an independent implementation
 ```
 

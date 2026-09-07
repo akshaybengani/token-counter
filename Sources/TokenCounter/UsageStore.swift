@@ -31,6 +31,12 @@ final class UsageStore: ObservableObject {
         }
     }
 
+    /// Survives midnight, so the chart has something to plot.
+    let history = DailyHistory()
+
+    /// Bumped whenever history is written, so the chart redraws.
+    @Published private(set) var historyRevision = 0
+
     private let providers: [ProviderID: any UsageProvider] = [
         .claude: ClaudeProvider(),
         .codex: CodexProvider(),
@@ -169,6 +175,7 @@ final class UsageStore: ObservableObject {
         guard !isScanning else { return }
         isScanning = true
         let providers = self.providers
+        let history = self.history
         queue.async { [weak self] in
             let now = Date()
             let dayStart = Calendar.current.startOfDay(for: now)
@@ -180,16 +187,29 @@ final class UsageStore: ObservableObject {
                 results[id] = provider.scan(dayStart: dayStart, dayKey: dayKey)
             }
 
+            // The day key here is the one the providers just counted against, so
+            // the row written is always the row they measured.
+            history.record(day: dayKey, snapshots: results)
+
             Task { @MainActor in
                 guard let self else { return }
                 self.snapshots = results
                 self.lastUpdated = Date()
                 self.isScanning = false
+                self.historyRevision &+= 1
             }
         }
     }
 
     func rebuild() { refresh(rebuilding: true) }
+
+    /// Daily totals for the chart, oldest first, measured the way the panel measures.
+    func dailyTotals(days: Int) -> [(record: DailyRecord, total: Int)] {
+        let active = Set(countingProviders)
+        return history.records(days: days).map { record in
+            (record, record.total(includeCacheReads: includeCacheReads, providers: active))
+        }
+    }
 
     func sourceDescription(_ id: ProviderID) -> String {
         providers[id]?.sourceDescription ?? ""

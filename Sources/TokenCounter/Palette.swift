@@ -7,7 +7,15 @@ import SwiftUI
 /// this file rather than a hunt through the views (std-27 cl-4). Each entry carries a
 /// light and a dark value: on a dark ground the hues stay luminous, and on a light
 /// ground the same hues sit a step or two deeper so they hold their contrast
-/// (std-29 cl-2).
+/// (std-29 cl-2). Every band measures at least 3:1 against its own surface.
+///
+/// The progress bands are a status ramp (good, warning, serious, critical), not a
+/// categorical one, so the adjacent-hue separation test for categorical series does
+/// not apply to them: a correct green-to-red ramp fails it by design. Monotonic
+/// lightness was tried as the colourblind-safe ordering and rejected, because forcing
+/// red to the lightness that ordering needs turns it pink and loses the alarm reading.
+/// The ordering is carried by position against the target line and by labels instead,
+/// which is what a status colour requires anyway: it never travels alone.
 enum Palette {
 
     // MARK: - Progress bands
@@ -16,8 +24,10 @@ enum Palette {
     static let low = theme(light: (0.10, 0.62, 0.45), dark: (0.25, 0.80, 0.62))
     static let lowTrailing = theme(light: (0.13, 0.63, 0.63), dark: (0.36, 0.86, 0.85))
 
-    /// From 60%.
-    static let medium = theme(light: (0.80, 0.55, 0.05), dark: (0.98, 0.75, 0.29))
+    /// From 60%. Both steps are set by measured contrast against their surface, not
+    /// by eye: the previous light value came in at 2.79:1, below the 3:1 floor for a
+    /// graphical object. These measure 3.34:1 on light and 9.08:1 on dark.
+    static let medium = theme(light: (0.722, 0.502, 0.039), dark: (0.910, 0.702, 0.247))
     static let mediumTrailing = theme(light: (0.85, 0.45, 0.06), dark: (0.99, 0.62, 0.30))
 
     /// From 85%.

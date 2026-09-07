@@ -61,6 +61,15 @@ file they reference. Moving a type the providers use breaks the harness rather t
 app, and a filtered pipeline will hide it. Run `./tools/check.sh` and read the exit
 code, not the output.
 
+**Before you touch colour.** Do not pick a value by eye. The progress bands are a
+status ramp and each one measures at least 3:1 against its own surface; the provider
+tints are categorical and belong in the palette validator in the `dataviz` skill. One
+known failure is already filed: Cursor and Gemini are 2.1 ΔE apart under deuteranopia.
+
+**Before you change how history is written.** It is an upsert of the current day on
+every scan, deliberately, so nothing depends on the app being awake at midnight. An
+unobserved day and a zero day are different states and the chart draws both.
+
 **Before you add a dependency.** There are none, and the README's privacy claims are
 checkable partly because of that. Adding one is a decision recorded on spec-26, not a
 silent edit to `Package.swift`.
@@ -71,6 +80,7 @@ silent edit to `Package.swift`.
 |---|---|
 | `Sources/TokenCounter/Providers/` | One file per provider, plus the shared ledger and protocol |
 | `Sources/TokenCounter/Palette.swift` | Every colour in the app |
+| `Sources/TokenCounter/History.swift` | The daily store behind the Analytics chart |
 | `Sources/TokenCounter/UsageStore.swift` | Aggregation, targets, thresholds, refresh timer |
 | `Tests/TokenCounterTests/` | Provider rules, with fixtures rather than your real transcripts |
 | `tools/verify/` | Differential harness against an independent implementation |

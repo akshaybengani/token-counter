@@ -61,6 +61,27 @@ MUTATIONS = [
         "testMappingPreservesGeminisOwnTotal",
     ),
     (
+        "History stores providers that report no token data",
+        SRC / "History.swift",
+        "for (id, snapshot) in snapshots where snapshot.installed && snapshot.quality != .unavailable {",
+        "for (id, snapshot) in snapshots where true {",
+        "testProvidersWithNoTokenDataAreNotStored",
+    ),
+    (
+        "History reports an unobserved day as observed",
+        SRC / "History.swift",
+        "return DailyRecord(day: key, date: date, counts: [:], recorded: false)",
+        "return DailyRecord(day: key, date: date, counts: [:], recorded: true)",
+        "testUnobservedDaysComeBackFlaggedRatherThanZero",
+    ),
+    (
+        "History stops pruning",
+        SRC / "History.swift",
+        "guard stored.days.count > Self.retainedDays else { return }",
+        "guard false else { return }",
+        "testRetentionDropsTheOldestDays",
+    ),
+    (
         "Gemini drops its message-id dedupe",
         SRC / "Providers/GeminiProvider.swift",
         "if !key.isEmpty && state.seen.contains(key) { continue }",

@@ -31,7 +31,7 @@ private struct TargetField: View {
     }
 }
 
-struct SettingsView: View {
+private struct GeneralSettings: View {
     @EnvironmentObject var store: UsageStore
     @State private var alwaysOnTop = Prefs.shared.alwaysOnTop
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -140,18 +140,7 @@ struct SettingsView: View {
                 }
             }
             .formStyle(.grouped)
-
-            Divider()
-
-            HStack {
-                Button("Quit") { NSApplication.shared.terminate(nil) }
-                Spacer()
-                Button("Done") { AppDelegate.shared?.closeSettings() }
-                    .keyboardShortcut(.defaultAction)
-            }
-            .padding(12)
         }
-        .frame(width: 460, height: 640)
     }
 
     private func providerRow(_ id: ProviderID) -> some View {
@@ -222,5 +211,41 @@ struct SettingsView: View {
             loginError = "Could not change the login item: \(error.localizedDescription). Add Token Counter yourself in System Settings, General, Login Items."
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
+    }
+}
+
+
+/// The settings window: a tab for the controls, a tab for the history.
+struct SettingsView: View {
+    @EnvironmentObject var store: UsageStore
+    @State private var tab = Tab.general
+
+    private enum Tab: Hashable { case general, analytics }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TabView(selection: $tab) {
+                GeneralSettings()
+                    .environmentObject(store)
+                    .tabItem { Label("General", systemImage: "gearshape") }
+                    .tag(Tab.general)
+
+                AnalyticsView()
+                    .environmentObject(store)
+                    .tabItem { Label("Analytics", systemImage: "chart.bar") }
+                    .tag(Tab.analytics)
+            }
+
+            Divider()
+
+            HStack {
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+                Spacer()
+                Button("Done") { AppDelegate.shared?.closeSettings() }
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding(12)
+        }
+        .frame(width: 520, height: 660)
     }
 }
