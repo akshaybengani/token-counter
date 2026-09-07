@@ -37,11 +37,7 @@ final class CursorProvider: UsageProvider, @unchecked Sendable {
     init() {
         dbURL = URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent("Library/Application Support/Cursor/User/globalStorage/state.vscdb")
-        let support = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("TokenCounter", isDirectory: true)
-        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
-        cacheURL = support.appendingPathComponent("cursor-state.json")
+        cacheURL = StateStore.directory.appendingPathComponent("cursor-state.json")
         if let data = try? Data(contentsOf: cacheURL),
            let decoded = try? JSONDecoder().decode(Cache.self, from: data) {
             cache = decoded

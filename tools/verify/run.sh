@@ -13,6 +13,11 @@ CUTOFF="${1:-2025-01-01}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
+# Run against a throwaway state directory. Without this the harness would advance the
+# app's byte cursors while writing a cutoff day key, and the app would then skip
+# today's records because cursors are meant to outlive a midnight rollover.
+export TOKEN_COUNTER_STATE_DIR="$WORK/state"
+
 echo "==> Reference (Python)"
 python3 tools/verify/reference.py "$CUTOFF"
 
@@ -21,8 +26,7 @@ echo "==> Providers (Swift)"
 cp Sources/TokenCounter/Providers/*.swift "$WORK/"
 cp tools/verify/main.swift "$WORK/"
 swiftc -O "$WORK"/*.swift -o "$WORK/verify"
-# The harness resets provider state, so the app re-tallies on its next scan.
 "$WORK/verify" "$CUTOFF"
 
 echo
-echo "Note: provider state was reset. The app re-scans within its refresh interval."
+echo "The running app's state was not touched."

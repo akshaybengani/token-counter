@@ -1,5 +1,27 @@
 import Foundation
 
+/// Where providers keep their incremental state.
+///
+/// `TOKEN_COUNTER_STATE_DIR` redirects it, which is how `tools/verify` scans from an
+/// arbitrary cutoff without touching the running app's state. That matters because byte
+/// cursors deliberately survive a day rollover: a tool that advanced the app's cursors
+/// while writing a different day key would make the app skip records it had not counted.
+enum StateStore {
+    static var directory: URL {
+        if let override = ProcessInfo.processInfo.environment["TOKEN_COUNTER_STATE_DIR"],
+           !override.isEmpty {
+            let url = URL(fileURLWithPath: override, isDirectory: true)
+            try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            return url
+        }
+        let url = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("TokenCounter", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+}
+
 /// Incremental state for a provider that reads append-only JSONL transcripts.
 struct LedgerState: Codable {
     var dayKey = ""
@@ -30,11 +52,7 @@ final class JSONLLedger: @unchecked Sendable {
         self.root = root
         self.needle = Data(needle.utf8)
         self.handler = handler
-        let support = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("TokenCounter", isDirectory: true)
-        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
-        stateURL = support.appendingPathComponent("\(stateName).json")
+        stateURL = StateStore.directory.appendingPathComponent("\(stateName).json")
         load()
     }
 
