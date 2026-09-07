@@ -62,11 +62,11 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
-        case .claude: return Color(red: 0.93, green: 0.55, blue: 0.24)
-        case .codex:  return Color(red: 0.30, green: 0.78, blue: 0.62)
-        case .cursor: return Color(red: 0.45, green: 0.60, blue: 0.95)
-        case .gemini: return Color(red: 0.68, green: 0.48, blue: 0.92)
-        case .copilot: return Color(red: 0.55, green: 0.58, blue: 0.64)
+        case .claude:  return Palette.claude
+        case .codex:   return Palette.codex
+        case .cursor:  return Palette.cursor
+        case .gemini:  return Palette.gemini
+        case .copilot: return Palette.copilot
         }
     }
 }

@@ -208,19 +208,20 @@ enum UsageLevel {
 
     var color: Color {
         switch self {
-        case .low:    return Color(red: 0.25, green: 0.80, blue: 0.62)
-        case .medium: return Color(red: 0.98, green: 0.75, blue: 0.29)
-        case .high:   return Color(red: 0.99, green: 0.55, blue: 0.24)
-        case .over:   return Color(red: 0.96, green: 0.35, blue: 0.38)
+        case .low:    return Palette.low
+        case .medium: return Palette.medium
+        case .high:   return Palette.high
+        case .over:   return Palette.over
         }
     }
 
+    /// The far end of the arc's gradient.
     var trailing: Color {
         switch self {
-        case .low:    return Color(red: 0.36, green: 0.86, blue: 0.85)
-        case .medium: return Color(red: 0.99, green: 0.62, blue: 0.30)
-        case .high:   return Color(red: 0.98, green: 0.40, blue: 0.35)
-        case .over:   return Color(red: 0.85, green: 0.25, blue: 0.55)
+        case .low:    return Palette.lowTrailing
+        case .medium: return Palette.mediumTrailing
+        case .high:   return Palette.highTrailing
+        case .over:   return Palette.overTrailing
         }
     }
 }

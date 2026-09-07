@@ -11,9 +11,10 @@ final class ClaudeProvider: UsageProvider {
 
     private let ledger: JSONLLedger
 
-    init() {
-        let root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".claude/projects")
-        ledger = JSONLLedger(root: root, stateName: "claude-state", needle: "\"usage\"") { line, dayStart, _, state in
+    /// `root` and `stateDirectory` default to the real locations; tests pass fixtures.
+    init(root: URL? = nil, stateDirectory: URL? = nil) {
+        let root = root ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".claude/projects")
+        ledger = JSONLLedger(root: root, stateName: "claude-state", needle: "\"usage\"", stateDirectory: stateDirectory) { line, dayStart, _, state in
             guard let obj = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   let message = obj["message"] as? [String: Any],
                   let usage = message["usage"] as? [String: Any]

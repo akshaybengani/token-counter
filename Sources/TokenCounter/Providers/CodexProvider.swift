@@ -16,9 +16,10 @@ final class CodexProvider: UsageProvider {
 
     private let ledger: JSONLLedger
 
-    init() {
-        let root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".codex/sessions")
-        ledger = JSONLLedger(root: root, stateName: "codex-state", needle: "\"token_count\"") { line, dayStart, path, state in
+    /// `root` and `stateDirectory` default to the real locations; tests pass fixtures.
+    init(root: URL? = nil, stateDirectory: URL? = nil) {
+        let root = root ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".codex/sessions")
+        ledger = JSONLLedger(root: root, stateName: "codex-state", needle: "\"token_count\"", stateDirectory: stateDirectory) { line, dayStart, path, state in
             guard let obj = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   let payload = obj["payload"] as? [String: Any],
                   payload["type"] as? String == "token_count",

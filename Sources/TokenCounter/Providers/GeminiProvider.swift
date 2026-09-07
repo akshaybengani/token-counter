@@ -32,9 +32,10 @@ final class GeminiProvider: UsageProvider, @unchecked Sendable {
     private let stateURL: URL
     private var state = State()
 
-    init() {
-        root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".gemini/tmp")
-        stateURL = StateStore.directory.appendingPathComponent("gemini-state.json")
+    /// `root` and `stateDirectory` default to the real locations; tests pass fixtures.
+    init(root: URL? = nil, stateDirectory: URL? = nil) {
+        self.root = root ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".gemini/tmp")
+        stateURL = (stateDirectory ?? StateStore.directory).appendingPathComponent("gemini-state.json")
         if let data = try? Data(contentsOf: stateURL),
            let decoded = try? JSONDecoder().decode(State.self, from: data) {
             state = decoded

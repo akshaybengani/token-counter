@@ -54,11 +54,18 @@ final class JSONLLedger: @unchecked Sendable {
     private let handler: LineHandler
     private var state = LedgerState()
 
-    init(root: URL, stateName: String, needle: String, handler: @escaping LineHandler) {
+    init(
+        root: URL,
+        stateName: String,
+        needle: String,
+        stateDirectory: URL? = nil,
+        handler: @escaping LineHandler
+    ) {
         self.root = root
         self.needle = Data(needle.utf8)
         self.handler = handler
-        stateURL = StateStore.directory.appendingPathComponent("\(stateName).json")
+        stateURL = (stateDirectory ?? StateStore.directory)
+            .appendingPathComponent("\(stateName).json")
         load()
     }
 

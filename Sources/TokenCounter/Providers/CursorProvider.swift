@@ -29,10 +29,11 @@ final class CursorProvider: UsageProvider, @unchecked Sendable {
     private let cacheURL: URL
     private var cache = Cache()
 
-    init() {
-        dbURL = URL(fileURLWithPath: NSHomeDirectory())
+    /// `database` and `stateDirectory` default to the real locations; tests pass fixtures.
+    init(database: URL? = nil, stateDirectory: URL? = nil) {
+        dbURL = database ?? URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent("Library/Application Support/Cursor/User/globalStorage/state.vscdb")
-        cacheURL = StateStore.directory.appendingPathComponent("cursor-state.json")
+        cacheURL = (stateDirectory ?? StateStore.directory).appendingPathComponent("cursor-state.json")
         if let data = try? Data(contentsOf: cacheURL),
            let decoded = try? JSONDecoder().decode(Cache.self, from: data) {
             cache = decoded

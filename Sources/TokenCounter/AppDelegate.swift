@@ -27,7 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Redraw the menu bar readout whenever the tally or settings change.
         store.objectWillChange
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.updateStatusItem() }
+            .sink { [weak self] _ in
+                self?.updateStatusItem()
+                self?.refitPanel()
+            }
             .store(in: &cancellables)
 
         // A sleeping Mac misses timer fires; catch up on wake.
@@ -61,7 +64,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
     }
 
-    private func buildMenu() -> NSMenu {
+    /// Internal rather than private so the test target can assert its structure.
+    func buildMenu() -> NSMenu {
         let menu = NSMenu()
 
         let header = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -82,6 +86,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         toggle.target = self
         toggle.tag = 101
         menu.addItem(toggle)
+
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem.sectionHeader(title: "Display"))
+
+        // Title case here matches the rest of this menu and the platform's own menus.
+        // std-24 cl-16 allows it for navigation labels, which is what a menu is.
+        let combined = NSMenuItem(title: "Combined", action: #selector(showCombined), keyEquivalent: "")
+        combined.target = self
+        combined.tag = 110
+        menu.addItem(combined)
+
+        let separate = NSMenuItem(title: "Per Provider", action: #selector(showPerProvider), keyEquivalent: "")
+        separate.target = self
+        separate.tag = 111
+        menu.addItem(separate)
 
         menu.addItem(.separator())
 
@@ -109,6 +128,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let toggle = statusItem?.menu?.item(withTag: 101) {
             toggle.state = (panel?.isVisible ?? false) ? .on : .off
         }
+        if let item = statusItem?.menu?.item(withTag: 110) {
+            item.state = store.mode == .combined ? .on : .off
+        }
+        if let item = statusItem?.menu?.item(withTag: 111) {
+            item.state = store.mode == .separate ? .on : .off
+        }
+    }
+
+    @objc private func showCombined() { store.mode = .combined }
+
+    @objc private func showPerProvider() { store.mode = .separate }
+
+    /// Re-fits the panel to its content, anchoring the top edge.
+    ///
+    /// The two modes are different heights, and a window whose content view controller
+    /// changes intrinsic size does not always shrink on its own, which would leave the
+    /// shorter mode clipped inside the taller frame.
+    private func refitPanel() {
+        guard let panel, let controller = panel.contentViewController else { return }
+        let size = controller.view.fittingSize
+        guard size.width > 50, size.height > 50 else { return }
+        guard abs(panel.frame.height - size.height) > 0.5
+            || abs(panel.frame.width - size.width) > 0.5 else { return }
+
+        let topEdge = panel.frame.maxY
+        panel.setContentSize(size)
+        panel.setFrameOrigin(NSPoint(x: panel.frame.origin.x, y: topEdge - panel.frame.height))
     }
 
     // MARK: - Panel

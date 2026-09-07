@@ -68,6 +68,8 @@ So the resting dial is a single arc coloured by progress: green under 60%, amber
 
 The split above is real, and it's lopsided because my usage is. Each small dial in per provider mode is coloured by progress for the same reason, with provider colours kept for the legend and the hover split.
 
+Every colour is defined once, in `Palette.swift`, with a light and a dark value: the hues stay luminous on a dark ground and sit a step deeper on a light one. Red is reserved for over-target and isn't used for anything else.
+
 ## The hard cases
 
 ### Codex counts upward, and says everything twice
@@ -184,12 +186,16 @@ Both databases are opened with `SQLITE_OPEN_READONLY`, since the applications th
 | `Sources/TokenCounter/Providers/CursorProvider.swift` | Cursor's SQLite database |
 | `Sources/TokenCounter/Providers/CopilotProvider.swift` | Copilot, which reports an absence rather than a figure |
 | `Sources/TokenCounter/UsageStore.swift` | Aggregation, targets, thresholds, and the refresh timer |
+| `Sources/TokenCounter/Palette.swift` | Every colour in the app, light and dark |
 | `Sources/TokenCounter/RingView.swift` | The ring, either one arc coloured by progress or split by provider |
 | `Sources/TokenCounter/PanelView.swift` | Panel body for both display modes |
 | `Sources/TokenCounter/SettingsView.swift` | Settings |
 | `Sources/TokenCounter/AppDelegate.swift` | Menu bar item, floating panel, window levels |
 | `tools/icongen/` | Renders the app icon |
+| `Tests/TokenCounterTests/` | Provider rules, against fixtures rather than your real transcripts |
 | `tools/verify/` | Cross-checks the providers against an independent implementation |
+| `tools/mutation-check.py` | Breaks each guard to prove the tests can fail |
+| `tools/make-dmg.sh` | Packages the built app for download |
 
 ## Running it
 
@@ -204,26 +210,37 @@ open ~/Applications/TokenCounter.app
 
 `build.sh` renders the icon, compiles, assembles `TokenCounter.app`, signs it ad-hoc, and installs it to `~/Applications`. There's no Dock icon: look for the percentage in your menu bar, and drag the panel wherever you want it.
 
+`./tools/make-dmg.sh` packages the built app as a DMG if you'd rather hand someone a download. That DMG isn't notarized, so Gatekeeper warns the first time and the user has to right-click and choose Open, or clear the quarantine flag by hand. Building from source stays the warning-free path, which is why it's the one documented first.
+
 Nothing is deliberately absent from this repository. There are no secrets, no API keys, and no signing identity to supply, because the build signs ad-hoc with `codesign --sign -`. If you'd rather sign with your own Developer ID, change the `codesign` line in `build.sh`.
 
 Turn on **Open at login** in settings to have it start with your Mac. That uses `SMAppService`, which can refuse for an ad-hoc signed app; if it does, settings tells you and you can add the app yourself under System Settings, General, Login Items.
 
 ## How it's tested
 
-There is no unit test suite. What the correctness of the figures rests on is a differential harness, `tools/verify/run.sh`, which scans from a cutoff you choose and compares all 5 providers, field by field, against an independent implementation of the same rules written in Python:
+Three layers, because the figures fail quietly rather than loudly.
+
+**24 unit tests** over the provider rules, run with `swift test`. They use fixtures in the repository, never your own transcripts, so they can exercise cases your data happens not to contain: the same call logged in two transcripts, a Codex total that drops mid-session, a Gemini prompt that is entirely cache, a file ending mid-line, a record one second either side of local midnight, and a day rollover.
+
+**A mutation check**, `python3 tools/mutation-check.py`, which breaks each guard in turn and requires a named test to go red. A suite that passes proves nothing on its own; this is what shows it can fail.
 
 ```bash
-./tools/verify/run.sh 2025-01-01
+swift test                          # 24 tests
+python3 tools/mutation-check.py     # 8 guards, each must be caught
+./tools/verify/run.sh 2025-01-01    # every provider against an independent implementation
 ```
 
-The two sides have to agree on input, output, cache writes, cache reads, and call count. The UI is checked separately by rendering `PanelView` through `ImageRenderer`, which is where the images above come from.
+**A differential harness**, which scans from a cutoff you choose and compares all 5 providers field by field against `reference.py`, an independent implementation of the same rules in another language. An error has to be made identically twice, in two languages, to survive. Gemini gets a second check on top: the mapping's output has to equal the sum of Gemini's own `total` fields, which it does at 159,515.
+
+The interface is checked by rendering `PanelView` through `ImageRenderer`, which is where the images above come from.
 
 Gemini gets a second, stronger check: the mapping's output has to equal the sum of Gemini's own `total` fields, which it does at 159,515.
 
-That harness caught three real defects:
+Between them these caught four real defects:
 
 - Cursor reported 0 tokens where the reference said 8,883,586. `sqlite3_bind_text` had been called with a nil destructor, which is `SQLITE_STATIC`, so SQLite kept a pointer to a Swift string temporary that was freed before the statement ran. Every bubble lookup silently missed. It needed `SQLITE_TRANSIENT`.
 - The panel never appeared, while the process ran and scanned happily. `NSHostingView.fittingSize` returns zero before its first layout pass, so the window was sized 0 by 0 and never reached the window server. Using `NSHostingController` as the panel's content view controller fixed it.
+- A test that couldn't fail. The mutation check found that the Codex "total dropped" test passed with the monotonic guard removed, because the positive-delta check already absorbed a whole-figure drop. The case that needs the guard is a *partial* drop, cached input falling while the rest rises, which yields a negative cache read. The test now covers that.
 - The harness itself corrupted the app's tally. Byte cursors deliberately outlive a midnight rollover, because anything past the cursor must belong to the new day. The harness wrote a cutoff day key while advancing those same cursors, so the app reset its counts, kept the cursors, and skipped a whole day's records, reporting 10 calls for a day that had had 1,252. Providers now resolve their state directory through `TOKEN_COUNTER_STATE_DIR`, which the harness points at a temporary directory.
 
 What the harness can't tell you is whether a provider's own numbers are honest, or whether the day boundary is right for a conversation that spans midnight. For Cursor, as described above, it demonstrably isn't. There's also no automated test of the interface: the panel is checked by rendering it, and by reading it.
