@@ -61,10 +61,14 @@ file they reference. Moving a type the providers use breaks the harness rather t
 app, and a filtered pipeline will hide it. Run `./tools/check.sh` and read the exit
 code, not the output.
 
-**Before you touch colour.** Do not pick a value by eye. The progress bands are a
-status ramp and each one measures at least 3:1 against its own surface; the provider
-tints are categorical and belong in the palette validator in the `dataviz` skill. One
-known failure is already filed: Cursor and Gemini are 2.1 ΔE apart under deuteranopia.
+**Before you touch colour.** Do not pick a value by eye. Run the palette validator in
+the `dataviz` skill and paste the numbers into the commit. The progress bands are a
+status ramp, so the categorical separation checks do not apply to them, but each band
+must still measure at least 3:1 against its own surface. The provider tints are
+categorical and must pass every check in both modes; they currently clear ΔE 8.9
+(light) and 10.4 (dark) under deuteranopia. `swift test` will catch two providers
+collapsing onto one colour, but it cannot tell you a pair is merely too close, so the
+validator is not optional.
 
 **Before you change how history is written.** It is an upsert of the current day on
 every scan, deliberately, so nothing depends on the app being awake at midnight. An

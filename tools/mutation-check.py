@@ -61,6 +61,20 @@ MUTATIONS = [
         "testMappingPreservesGeminisOwnTotal",
     ),
     (
+        "Gemini's tint collapses onto Cursor's",
+        SRC / "Palette.swift",
+        "static let gemini  = theme(light: (0.561, 0.271, 0.439), dark: (0.561, 0.294, 0.475))",
+        "static let gemini  = theme(light: (0.000, 0.447, 0.698), dark: (0.165, 0.498, 0.753))",
+        "testEveryProviderIsADistinctColourInBothAppearances",
+    ),
+    (
+        "A colour stops being theme-aware",
+        SRC / "Palette.swift",
+        "static let cursor  = theme(light: (0.000, 0.447, 0.698), dark: (0.165, 0.498, 0.753))",
+        "static let cursor  = theme(light: (0.000, 0.447, 0.698), dark: (0.000, 0.447, 0.698))",
+        "testEveryColourResolvesDifferentlyPerAppearance",
+    ),
+    (
         "History stores providers that report no token data",
         SRC / "History.swift",
         "for (id, snapshot) in snapshots where snapshot.installed && snapshot.quality != .unavailable {",

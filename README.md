@@ -70,6 +70,8 @@ The split above is real, and it's lopsided because my usage is. Each small dial 
 
 Every colour is defined once, in `Palette.swift`, with a light and a dark value: the hues stay luminous on a dark ground and sit a step deeper on a light one. Red is reserved for over-target and isn't used for anything else.
 
+The provider hues follow Okabe-Ito, and they're chosen with a validator rather than by eye. That matters more than it sounds: the first version had Cursor in blue and Gemini in violet, which measure 2.1 ΔE apart under deuteranopia. To a red-green colourblind reader they were the same colour, sitting next to each other in the legend. Blue and violet can't be pulled apart by hue, so Gemini moved to a plum with a real lightness gap from both the blue and the green. The four now clear ΔE 8.9 in light and 10.4 in dark under deuteranopia, and every colour measures at least 3:1 against its own background.
+
 ## A day's total is written continuously, not at midnight
 
 The obvious way to keep a daily history is to write the day's figure when the day ends. That loses a day whenever the Mac is asleep or shut down at midnight, which for a laptop is most nights.

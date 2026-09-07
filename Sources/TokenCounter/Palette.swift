@@ -41,12 +41,33 @@ enum Palette {
 
     // MARK: - Provider hues
 
+    /// A categorical set, so unlike the progress bands it is held to the adjacent-hue
+    /// separation checks. Every step below was chosen by running the palette
+    /// validator in the `dataviz` skill rather than by eye, and the four that draw an
+    /// arc pass all of its checks in both modes:
+    ///
+    ///   light  worst pair ΔE 8.9 under deuteranopia, 16.0 in normal vision
+    ///   dark   worst pair ΔE 10.4 under deuteranopia, 18.7 in normal vision
+    ///
+    /// The earlier set failed badly: Cursor's blue and Gemini's violet were ΔE 2.1
+    /// apart under deuteranopia, which made them the same colour to a deuteranope
+    /// while sitting next to each other in the legend. Blue and violet cannot be
+    /// separated by hue alone, so Gemini moved to a plum with a real lightness gap
+    /// from both the blue and the green. The hues follow Okabe-Ito, which was designed
+    /// for exactly this.
+    ///
     /// Reserved per provider, so the hover split and the legend teach one vocabulary
-    /// (std-29 cl-8). Deliberately clear of the red reserved for over-target.
-    static let claude  = theme(light: (0.76, 0.38, 0.06), dark: (0.93, 0.55, 0.24))
-    static let codex   = theme(light: (0.10, 0.58, 0.44), dark: (0.30, 0.78, 0.62))
-    static let cursor  = theme(light: (0.24, 0.38, 0.80), dark: (0.45, 0.60, 0.95))
-    static let gemini  = theme(light: (0.47, 0.27, 0.75), dark: (0.68, 0.48, 0.92))
+    /// (std-29 cl-8), and clear of the red that means over-target.
+    static let claude  = theme(light: (0.659, 0.373, 0.000), dark: (0.769, 0.439, 0.122))
+    static let codex   = theme(light: (0.059, 0.561, 0.388), dark: (0.184, 0.678, 0.510))
+    static let cursor  = theme(light: (0.000, 0.447, 0.698), dark: (0.165, 0.498, 0.753))
+    static let gemini  = theme(light: (0.561, 0.271, 0.439), dark: (0.561, 0.294, 0.475))
+
+    /// Grey on purpose: Copilot reports no token counts, so it never draws an arc and
+    /// only ever appears as a legend dot beside the words "No token data". Being the
+    /// one low-chroma entry also separates it from the four by saturation alone. It is
+    /// excluded from the categorical checks, which require chroma the grey does not
+    /// have and should not have.
     static let copilot = theme(light: (0.40, 0.43, 0.50), dark: (0.55, 0.58, 0.64))
 
     // MARK: - Resolution

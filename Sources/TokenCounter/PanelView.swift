@@ -97,10 +97,12 @@ struct PanelView: View {
             ForEach(store.activeProviders) { id in
                 let snap = store.snapshot(id)
                 HStack(spacing: 6) {
+                    // Full strength always. Dimming these was diluting them toward
+                    // the panel background, which eroded the separation the palette
+                    // was validated for; identity is not something to de-emphasise.
                     Circle()
                         .fill(snap.installed ? id.tint : Color.secondary.opacity(0.35))
-                        .frame(width: 6, height: 6)
-                        .opacity(hoveringRing || snap.quality == .unavailable ? 1 : 0.55)
+                        .frame(width: 7, height: 7)
                     Text(id.shortName)
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
