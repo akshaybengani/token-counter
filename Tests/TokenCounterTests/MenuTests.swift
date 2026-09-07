@@ -39,6 +39,41 @@ final class MenuTests: XCTestCase {
         }
     }
 
+    /// The checkmark has to follow the mode, including when settings changes it.
+    /// This was on the manual sign-off list until the state was separated from the
+    /// status bar item it used to be entangled with.
+    func testTheCheckmarkFollowsTheDisplayMode() {
+        let delegate = AppDelegate()
+        withExtendedLifetime(delegate) {
+            let menu = delegate.buildMenu()
+            let store = UsageStore.shared
+            let original = store.mode
+            defer { store.mode = original }
+
+            store.mode = .combined
+            delegate.applyState(to: menu, panelVisible: true)
+            XCTAssertEqual(menu.item(withTag: 110)?.state, .on, "Combined should be ticked")
+            XCTAssertEqual(menu.item(withTag: 111)?.state, .off)
+
+            store.mode = .separate
+            delegate.applyState(to: menu, panelVisible: true)
+            XCTAssertEqual(menu.item(withTag: 110)?.state, .off)
+            XCTAssertEqual(menu.item(withTag: 111)?.state, .on, "Per Provider should be ticked")
+        }
+    }
+
+    /// Show Panel reflects whether the panel is actually on screen.
+    func testShowPanelReflectsVisibility() {
+        let delegate = AppDelegate()
+        withExtendedLifetime(delegate) {
+            let menu = delegate.buildMenu()
+            delegate.applyState(to: menu, panelVisible: false)
+            XCTAssertEqual(menu.item(withTag: 101)?.state, .off)
+            delegate.applyState(to: menu, panelVisible: true)
+            XCTAssertEqual(menu.item(withTag: 101)?.state, .on)
+        }
+    }
+
     /// Tags are how the checkmarks and the header are found later, so a collision
     /// would make one item silently unreachable.
     func testTagsAreUnique() {

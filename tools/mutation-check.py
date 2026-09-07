@@ -61,6 +61,13 @@ MUTATIONS = [
         "testMappingPreservesGeminisOwnTotal",
     ),
     (
+        "The menu checkmark stops following the mode",
+        SRC / "AppDelegate.swift",
+        "item.state = store.mode == .separate ? .on : .off",
+        "item.state = .off",
+        "testTheCheckmarkFollowsTheDisplayMode",
+    ),
+    (
         "Gemini's tint collapses onto Cursor's",
         SRC / "Palette.swift",
         "static let gemini  = theme(light: (0.561, 0.271, 0.439), dark: (0.561, 0.294, 0.475))",

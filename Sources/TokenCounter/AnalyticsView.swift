@@ -14,7 +14,7 @@ struct AnalyticsView: View {
     @State private var span = 14
     @State private var hovered: DailyRecord?
 
-    private let spans = [7, 30, 90]
+    private let spans = [7, 14, 30, 90]
 
     private var rows: [(record: DailyRecord, total: Int)] {
         store.dailyTotals(days: span)
@@ -30,15 +30,18 @@ struct AnalyticsView: View {
 
             if recorded.isEmpty {
                 emptyState
+                // Nothing to fill the pane with, so hold the copy at the top.
+                Spacer(minLength: 0)
             } else {
+                // The chart takes the slack, so the pane has no dead space under it.
                 chart
                 bands
                 summary
             }
-
-            Spacer(minLength: 0)
         }
         .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color(nsColor: .windowBackgroundColor))
         // Redraw when a scan writes a new row.
         .id(store.historyRevision)
     }
@@ -56,7 +59,7 @@ struct AnalyticsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 150)
+                .frame(width: 190)
             }
 
             // On hover this line becomes the readout for the day under the cursor,
@@ -153,7 +156,7 @@ struct AnalyticsView: View {
                     }
             }
         }
-        .frame(height: 190)
+        .frame(minHeight: 190, maxHeight: .infinity)
     }
 
     /// Maps a cursor position to the nearest day, so the whole column is a hit target

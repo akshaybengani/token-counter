@@ -121,17 +121,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .foregroundColor: color,
             ]
         )
+        if let menu = statusItem?.menu {
+            applyState(to: menu, panelVisible: panel?.isVisible ?? false)
+        }
+    }
 
-        if let header = statusItem?.menu?.item(withTag: 100) {
+    /// Writes the current state onto the menu's items.
+    ///
+    /// Separate from `updateStatusItem` so it can be asserted without a status bar
+    /// item, which a test process has no business creating. This is what puts the
+    /// checkmark beside the active display mode.
+    func applyState(to menu: NSMenu, panelVisible: Bool) {
+        if let header = menu.item(withTag: 100) {
             header.title = "\(Fmt.compact(store.combinedUsed)) of \(Fmt.compactTight(store.combinedTarget)) today · \(store.percentText)"
         }
-        if let toggle = statusItem?.menu?.item(withTag: 101) {
-            toggle.state = (panel?.isVisible ?? false) ? .on : .off
+        if let toggle = menu.item(withTag: 101) {
+            toggle.state = panelVisible ? .on : .off
         }
-        if let item = statusItem?.menu?.item(withTag: 110) {
+        if let item = menu.item(withTag: 110) {
             item.state = store.mode == .combined ? .on : .off
         }
-        if let item = statusItem?.menu?.item(withTag: 111) {
+        if let item = menu.item(withTag: 111) {
             item.state = store.mode == .separate ? .on : .off
         }
     }
@@ -242,7 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func openSettings() {
         if settingsWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 520, height: 660),
+                contentRect: NSRect(x: 0, y: 0, width: 520, height: 700),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false

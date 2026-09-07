@@ -50,10 +50,13 @@ while writing a different day key makes the app skip records it never counted. S
 app. This has already broken once.
 
 **Before you claim the interface works.** Screen Recording is not granted here, so
-`screencapture` and `CGWindowListCreateImage` both fail and the panel cannot be driven.
-Render `PanelView` through `ImageRenderer` and query the window server for geometry.
-Do not report hover behaviour or the login item as verified: both are flagged for manual
-sign-off under t-4.
+`screencapture` and `CGWindowListCreateImage` both fail. Two things still work.
+`ImageRenderer` draws pure SwiftUI, which covers the panel, but renders a `Form` or a
+segmented `Picker` as a yellow placeholder. For anything AppKit-backed use
+`./tools/uishot/run.sh`, which builds the real window and calls `cacheDisplay`. Under
+that capture every `NSSwitch` draws in its off appearance regardless of state, so read
+the control's state rather than the pixels before calling it a bug. Hover behaviour and
+"Open at login" are still unverifiable here and stay on t-4.
 
 **Before you refactor anything the providers import.** `tools/verify/run.sh` compiles
 the provider files in a temporary directory, so it needs an explicit copy line for every
@@ -89,6 +92,7 @@ silent edit to `Package.swift`.
 | `Tests/TokenCounterTests/` | Provider rules, with fixtures rather than your real transcripts |
 | `tools/verify/` | Differential harness against an independent implementation |
 | `tools/mutation-check.py` | Proves the tests can fail |
+| `tools/uishot/` | Captures and drives the real settings window |
 | `tools/check.sh` | Every gate in one run |
 | `tools/icongen/` | Renders the app icon |
 

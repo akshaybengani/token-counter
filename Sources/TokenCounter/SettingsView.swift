@@ -10,9 +10,11 @@ private struct TargetField: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            TextField("Target", text: $text)
+            TextField("", text: $text)
+                .labelsHidden()
                 .frame(width: 78)
                 .monospacedDigit()
+                .multilineTextAlignment(.trailing)
             Text("million")
                 .foregroundStyle(.secondary)
         }
@@ -215,25 +217,48 @@ private struct GeneralSettings: View {
 }
 
 
-/// The settings window: a tab for the controls, a tab for the history.
+/// The settings window: one pane for the controls, one for the history.
+///
+/// The switcher is a segmented control rather than a `TabView`. A `TabView` here
+/// produced no tab strip at all, in any AppKit class, so it rendered only its first
+/// tab and the Analytics pane was unreachable. This is built from a `Picker`, which
+/// the window-capture harness in tools/uishot confirms comes through as a real
+/// NSSegmentedControl in this exact context.
 struct SettingsView: View {
     @EnvironmentObject var store: UsageStore
-    @State private var tab = Tab.general
+    @State private var pane = Pane.general
 
-    private enum Tab: Hashable { case general, analytics }
+    private enum Pane: Hashable, CaseIterable {
+        case general, analytics
+
+        var label: String {
+            switch self {
+            case .general: return "General"
+            case .analytics: return "Analytics"
+            }
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView(selection: $tab) {
-                GeneralSettings()
-                    .environmentObject(store)
-                    .tabItem { Label("General", systemImage: "gearshape") }
-                    .tag(Tab.general)
+            Picker("", selection: $pane) {
+                ForEach(Pane.allCases, id: \.self) { pane in
+                    Text(pane.label).tag(pane)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 240)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
 
-                AnalyticsView()
-                    .environmentObject(store)
-                    .tabItem { Label("Analytics", systemImage: "chart.bar") }
-                    .tag(Tab.analytics)
+            Divider()
+
+            switch pane {
+            case .general:
+                GeneralSettings().environmentObject(store)
+            case .analytics:
+                AnalyticsView().environmentObject(store)
             }
 
             Divider()
@@ -246,6 +271,7 @@ struct SettingsView: View {
             }
             .padding(12)
         }
-        .frame(width: 520, height: 660)
+        .frame(width: 520, height: 700)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 }

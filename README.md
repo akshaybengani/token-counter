@@ -189,6 +189,12 @@ Both databases are opened with `SQLITE_OPEN_READONLY`, since the applications th
 
 **It writes state of its own**, to `~/Library/Application Support/TokenCounter/`. Those files hold today's tallies, a byte offset per transcript, and the message identifiers used for deduplication. Identifiers, not content. Delete the directory to force a full re-tally.
 
+Settings, both panes, captured from the real window rather than rendered:
+
+<img src="docs/ui/settings-general.png" width="300" alt="The General pane: providers with their data quality, display mode, and the daily target"> <img src="docs/ui/settings-analytics.png" width="300" alt="The Analytics pane: daily tokens as bars against the target">
+
+Every switch in that first capture is drawn in its off position, which is an artifact of how the window is captured rather than the real state. The control states were read separately and match.
+
 ## Repository layout
 
 | Path | Role |
@@ -212,6 +218,7 @@ Both databases are opened with `SQLITE_OPEN_READONLY`, since the applications th
 | `Tests/TokenCounterTests/` | Provider rules, against fixtures rather than your real transcripts |
 | `tools/verify/` | Cross-checks the providers against an independent implementation |
 | `tools/mutation-check.py` | Breaks each guard to prove the tests can fail |
+| `tools/uishot/` | Captures the settings window, including AppKit-backed controls |
 | `tools/check.sh` | Runs every gate and fails loudly |
 | `tools/make-dmg.sh` | Packages the built app for download |
 
@@ -256,7 +263,9 @@ python3 tools/mutation-check.py     # 11 guards, each must be caught
 
 **A differential harness**, which scans from a cutoff you choose and compares all 5 providers field by field against `reference.py`, an independent implementation of the same rules in another language. An error has to be made identically twice, in two languages, to survive. Gemini gets a second check on top: the mapping's output has to equal the sum of Gemini's own `total` fields, which it does at 159,515.
 
-The interface is checked by rendering `PanelView` through `ImageRenderer`, which is where the images above come from.
+The interface is checked two ways. `ImageRenderer` draws the panel, which is where the images above come from. It cannot draw a `Form` or a segmented `Picker`, both of which come out as a placeholder, so `tools/uishot/run.sh` captures the settings window by asking its real view hierarchy to draw itself with `cacheDisplay`, then drives the controls through the AppKit objects behind them and checks the pane actually changed.
+
+That second harness was worth writing. It found that the settings window had no tab strip at all, in any AppKit class, so the Analytics pane was unreachable in the shipped build; that the range picker had no segment selected, because the default span was not one of its options; and that a label was wrapping to "Tar-get". None of it was visible before, and none of it would have been caught by a test.
 
 Gemini gets a second, stronger check: the mapping's output has to equal the sum of Gemini's own `total` fields, which it does at 159,515.
 
