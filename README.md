@@ -10,7 +10,7 @@ It isn't a billing tool, and it never contacts a provider's API. Every figure co
 ![Network: none](https://img.shields.io/badge/network-none-brightgreen)
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
 
-<img src="docs/panel-combined-dark.png" width="224" alt="Combined mode: one dial for every provider together"> <img src="docs/panel-separate-dark.png" width="224" alt="Per provider mode: one small dial for each">
+<img src="docs/panel-combined-dark.png" width="224" alt="Combined mode: one dial for every provider together"> <img src="docs/panel-separate-dark.png" width="224" alt="Per provider mode: one small dial for each"> <img src="docs/panel-combined-light.png" width="224" alt="The same panel in light mode">
 
 Both shots are real output. The providers reading 0 hadn't run that day, which is what an unused provider looks like.
 
@@ -55,6 +55,8 @@ used = input + output + cache_writes        # 8.22M on the same day
 On this machine a heavy day lands between 6M and 9M under that formula, which is what makes a target like 10M/day mean something. Turn **Count cache reads** on in settings if you want the gross figure, and move the target to roughly 500M to match.
 
 Cache reads are still collected and still shown in the breakdown row. They're excluded from the total, not discarded.
+
+One asymmetry to know about: the breakdown's cache column is cache writes, and only Claude Code reports those. Codex and Gemini report a cached-input figure, which lands in cache reads, and neither reports cache writes at all. So that column reads 0 unless Claude Code is one of the enabled providers.
 
 ## The dial's colour is the reading, and the split is one hover away
 
@@ -126,6 +128,8 @@ Copilot is in the list because it's worth knowing that it can't answer the quest
 - VS Code's own `chatSessions` documents carry no usage figures.
 
 So Copilot reports "no token data" rather than a number, and it's excluded from every total. That distinction matters: a provider that reports 0 has been idle, and a provider that reports nothing can't tell you either way. Showing 0 for the second case would be a claim the data doesn't support.
+
+<img src="docs/panel-copilot-separate.png" width="224" alt="Copilot listed with no dial and no percentage, reading no token data">
 
 ### Cursor barely records anything
 
