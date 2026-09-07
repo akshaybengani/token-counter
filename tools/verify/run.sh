@@ -24,6 +24,9 @@ python3 tools/verify/reference.py "$CUTOFF"
 echo
 echo "==> Providers (Swift)"
 cp Sources/TokenCounter/Providers/*.swift "$WORK/"
+# Provider.swift names Palette for its tints, so the palette has to come too.
+# Anything else the providers grow a reference to needs adding here.
+cp Sources/TokenCounter/Palette.swift "$WORK/"
 cp tools/verify/main.swift "$WORK/"
 swiftc -O "$WORK"/*.swift -o "$WORK/verify"
 "$WORK/verify" "$CUTOFF"

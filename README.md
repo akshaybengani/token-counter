@@ -195,6 +195,7 @@ Both databases are opened with `SQLITE_OPEN_READONLY`, since the applications th
 | `Tests/TokenCounterTests/` | Provider rules, against fixtures rather than your real transcripts |
 | `tools/verify/` | Cross-checks the providers against an independent implementation |
 | `tools/mutation-check.py` | Breaks each guard to prove the tests can fail |
+| `tools/check.sh` | Runs every gate and fails loudly |
 | `tools/make-dmg.sh` | Packages the built app for download |
 
 ## Running it
@@ -223,6 +224,12 @@ Three layers, because the figures fail quietly rather than loudly.
 **24 unit tests** over the provider rules, run with `swift test`. They use fixtures in the repository, never your own transcripts, so they can exercise cases your data happens not to contain: the same call logged in two transcripts, a Codex total that drops mid-session, a Gemini prompt that is entirely cache, a file ending mid-line, a record one second either side of local midnight, and a day rollover.
 
 **A mutation check**, `python3 tools/mutation-check.py`, which breaks each guard in turn and requires a named test to go red. A suite that passes proves nothing on its own; this is what shows it can fail.
+
+```bash
+./tools/check.sh                    # build, tests, mutation check, harness
+```
+
+Or one at a time:
 
 ```bash
 swift test                          # 24 tests

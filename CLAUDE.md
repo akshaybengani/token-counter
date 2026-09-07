@@ -55,6 +55,12 @@ Render `PanelView` through `ImageRenderer` and query the window server for geome
 Do not report hover behaviour or the login item as verified: both are flagged for manual
 sign-off under t-4.
 
+**Before you refactor anything the providers import.** `tools/verify/run.sh` compiles
+the provider files in a temporary directory, so it needs an explicit copy line for every
+file they reference. Moving a type the providers use breaks the harness rather than the
+app, and a filtered pipeline will hide it. Run `./tools/check.sh` and read the exit
+code, not the output.
+
 **Before you add a dependency.** There are none, and the README's privacy claims are
 checkable partly because of that. Adding one is a decision recorded on spec-26, not a
 silent edit to `Package.swift`.
@@ -69,12 +75,19 @@ silent edit to `Package.swift`.
 | `Tests/TokenCounterTests/` | Provider rules, with fixtures rather than your real transcripts |
 | `tools/verify/` | Differential harness against an independent implementation |
 | `tools/mutation-check.py` | Proves the tests can fail |
+| `tools/check.sh` | Every gate in one run |
 | `tools/icongen/` | Renders the app icon |
 
 ## Local how-to
 
 ```bash
+./tools/check.sh                    # every gate: build, tests, mutation check, harness
 ./build.sh                          # icon, compile, sign, install to ~/Applications
+```
+
+Individually, when you want one of them:
+
+```bash
 swift test                          # provider rules
 python3 tools/mutation-check.py     # prove the tests can fail
 ./tools/verify/run.sh 2025-01-01    # cross-check every provider against Python
