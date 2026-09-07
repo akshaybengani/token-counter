@@ -59,6 +59,31 @@ for p in sorted(glob.glob(os.path.expanduser("~/.codex/sessions/**/*.jsonl"), re
         ccalls += 1
 print("CODEX   input=%d output=%d cacheRead=%d calls=%d" % (cin, cout, ccached, ccalls))
 
+# ---- Gemini CLI reference: whole-file sessions, deduped by message id ----
+gseen = set()
+gin = gout = gcr = gcalls = 0
+for p in glob.glob(os.path.expanduser("~/.gemini/tmp/*/chats/session-*.json")):
+    if datetime.datetime.fromtimestamp(os.path.getmtime(p)).astimezone() < cutoff:
+        continue
+    try: doc = json.load(open(p))
+    except Exception: continue
+    for m in doc.get("messages", []):
+        t = m.get("tokens")
+        if not t: continue
+        mid = m.get("id") or ""
+        if mid and mid in gseen: continue
+        ts = m.get("timestamp")
+        if not ts: continue
+        dt = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone()
+        if dt < cutoff: continue
+        if mid: gseen.add(mid)
+        cached = t.get("cached", 0) or 0
+        gin += max(0, (t.get("input", 0) or 0) - cached) + (t.get("tool", 0) or 0)
+        gout += (t.get("output", 0) or 0) + (t.get("thoughts", 0) or 0)
+        gcr += cached
+        gcalls += 1
+print("GEMINI  input=%d output=%d cacheRead=%d calls=%d" % (gin, gout, gcr, gcalls))
+
 # ---- Cursor reference: composer createdAt, sum its bubbles' tokenCount ----
 db = os.path.expanduser("~/Library/Application Support/Cursor/User/globalStorage/state.vscdb")
 uin = uout = ucalls = 0

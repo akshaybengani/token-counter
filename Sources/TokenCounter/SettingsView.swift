@@ -57,7 +57,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
 
                     Text(store.mode == .combined
-                         ? "One ring for the enabled providers together, with an arc for each."
+                         ? "One ring for the enabled providers together, coloured by how close you are to the target. Hover the ring to split it by provider."
                          : "One small ring per provider, each against its own target.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -80,7 +80,7 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(store.orderedProviders) { id in
+                        ForEach(store.orderedProviders.filter { store.snapshot($0).quality != .unavailable }) { id in
                             LabeledContent(id.displayName) {
                                 TargetField(value: store.target(id)) { store.setTarget($0, for: id) }
                             }
@@ -173,6 +173,10 @@ struct SettingsView: View {
                         Text("not installed")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
+                    } else if snap.quality == .unavailable {
+                        Text("no token data")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     } else if snap.quality == .partial {
                         Text("partial data")
                             .font(.caption)
@@ -199,6 +203,10 @@ struct SettingsView: View {
             return "Per-turn token counts with timestamps, so the figure is exact. Codex reports cached input but no cache writes."
         case .cursor:
             return "Cursor records tokens for only some requests, and dates them by conversation rather than by message, so this figure is a floor and is marked with ≥."
+        case .gemini:
+            return "Per-message token counts with timestamps, so the figure is exact. Gemini reports cached input but no cache writes, and its Antigravity conversations carry no token figures."
+        case .copilot:
+            return "Copilot records no token counts on disk. Its session store keeps messages and timestamps with no token column, so there is no figure to show and it stays out of every total."
         }
     }
 

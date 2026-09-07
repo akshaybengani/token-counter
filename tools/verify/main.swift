@@ -11,7 +11,7 @@ guard let cutoff = iso.date(from: CommandLine.arguments[1]) else {
 let key = "verify-" + CommandLine.arguments[1]
 print("cutoff:", cutoff)
 
-let providers: [any UsageProvider] = [ClaudeProvider(), CodexProvider(), CursorProvider()]
+let providers: [any UsageProvider] = [ClaudeProvider(), CodexProvider(), GeminiProvider(), CursorProvider(), CopilotProvider()]
 for p in providers {
     p.reset()
     let snap = p.scan(dayStart: cutoff, dayKey: key)

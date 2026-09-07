@@ -3,6 +3,7 @@ import SwiftUI
 struct PanelView: View {
     @EnvironmentObject var store: UsageStore
     @State private var hovering = false
+    @State private var hoveringRing = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -52,14 +53,23 @@ struct PanelView: View {
 
     private var combined: some View {
         VStack(spacing: 10) {
-            RingView(segments: store.combinedSegments, lineWidth: 13) {
+            // At rest the dial's colour is the reading. Hovering it splits the same arc
+            // by provider, which answers "which of them spent it" without a second chart.
+            RingView(
+                fill: hoveringRing
+                    ? .segments(store.combinedSegments)
+                    : .level(fraction: store.combinedFraction, level: store.level),
+                lineWidth: 13
+            ) {
                 RingCenterLabel(
                     used: (store.hasPartialData ? "≥" : "") + Fmt.compact(store.combinedUsed),
-                    target: Fmt.compactTight(store.combinedTarget)
+                    target: Fmt.compactTight(store.combinedTarget),
+                    caption: hoveringRing ? "by provider" : nil
                 )
             }
             .frame(width: 132, height: 132)
             .padding(.vertical, 2)
+            .onHover { hoveringRing = $0 }
 
             VStack(spacing: 2) {
                 Text(store.percentText)
@@ -90,23 +100,29 @@ struct PanelView: View {
                     Circle()
                         .fill(snap.installed ? id.tint : Color.secondary.opacity(0.35))
                         .frame(width: 6, height: 6)
+                        .opacity(hoveringRing || snap.quality == .unavailable ? 1 : 0.55)
                     Text(id.shortName)
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 4)
-                    if snap.installed {
-                        Text((snap.quality == .partial && store.used(id) > 0 ? "≥" : "") + Fmt.compact(store.used(id)))
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .monospacedDigit()
-                    } else {
-                        Text("Not installed")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.tertiary)
-                    }
+                    Text(legendValue(id, snap))
+                        .font(.system(size: snap.installed && snap.quality != .unavailable ? 10 : 9,
+                                      weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(snap.installed && snap.quality != .unavailable
+                                         ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
                 }
             }
         }
         .padding(.top, 1)
+        .animation(.easeInOut(duration: 0.2), value: hoveringRing)
+    }
+
+    private func legendValue(_ id: ProviderID, _ snap: ProviderSnapshot) -> String {
+        guard snap.installed else { return "Not installed" }
+        guard snap.quality != .unavailable else { return "No token data" }
+        let marker = snap.quality == .partial && store.used(id) > 0 ? "≥" : ""
+        return marker + Fmt.compact(store.used(id))
     }
 
     // MARK: - Separate: a small ring per provider, each with its own target
@@ -123,39 +139,49 @@ struct PanelView: View {
     private func providerRow(_ id: ProviderID) -> some View {
         let snap = store.snapshot(id)
         let used = store.used(id)
-        let segments = used > 0
-            ? [RingSegment(id: id.rawValue, start: 0, end: store.fraction(id), color: id.tint)]
-            : []
+        let reports = snap.installed && snap.quality != .unavailable
 
         return HStack(spacing: 9) {
-            RingView(segments: segments, lineWidth: 5, glow: false)
-                .frame(width: 34, height: 34)
+            RingView(
+                fill: .level(fraction: reports ? store.fraction(id) : 0,
+                             level: UsageLevel(fraction: store.rawFraction(id))),
+                lineWidth: 5,
+                glow: false
+            )
+            .frame(width: 34, height: 34)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(id.displayName)
                     .font(.system(size: 11, weight: .medium))
                     .lineLimit(1)
-                if snap.installed {
-                    Text("\(snap.quality == .partial && used > 0 ? "≥" : "")\(Fmt.compact(used)) of \(Fmt.compactTight(store.target(id)))")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                } else {
-                    Text("Not installed")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
-                }
+                Text(rowSubtitle(id, snap, used: used, reports: reports))
+                    .font(.system(size: 9))
+                    .foregroundStyle(reports ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tertiary))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
 
             Spacer(minLength: 0)
 
-            if snap.installed {
+            if reports {
                 Text(store.percentText(store.rawFraction(id)))
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(UsageLevel(fraction: store.rawFraction(id)).color)
                     .monospacedDigit()
             }
         }
+    }
+
+    private func rowSubtitle(_ id: ProviderID, _ snap: ProviderSnapshot, used: Int, reports: Bool) -> String {
+        guard snap.installed else { return "Not installed" }
+        guard snap.quality != .unavailable else {
+            return snap.counts.calls > 0
+                ? "No token data · \(Fmt.calls(snap.counts.calls))"
+                : "No token data"
+        }
+        let marker = snap.quality == .partial && used > 0 ? "≥" : ""
+        return "\(marker)\(Fmt.compact(used)) of \(Fmt.compactTight(store.target(id)))"
     }
 
     // MARK: - Breakdown

@@ -1,4 +1,10 @@
 import Foundation
+import SQLite3
+
+/// Tells SQLite to copy a bound string. Swift's bridged C string is a temporary that
+/// dies when the bind call returns, so the default SQLITE_STATIC would leave the
+/// statement pointing at freed memory by the time it is stepped.
+let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 /// Where providers keep their incremental state.
 ///

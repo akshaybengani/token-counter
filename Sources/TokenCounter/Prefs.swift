@@ -34,7 +34,7 @@ final class Prefs {
     private init() {
         d.register(defaults: [
             PrefKey.combinedTarget: 10_000_000,
-            PrefKey.enabledProviders: ProviderID.allCases.map(\.rawValue),
+            PrefKey.enabledProviders: ProviderID.allCases.filter { $0 != .copilot }.map(\.rawValue),
             PrefKey.displayMode: DisplayMode.combined.rawValue,
             PrefKey.includeCacheReads: false,
             PrefKey.refreshMinutes: 5,
@@ -72,7 +72,7 @@ final class Prefs {
             let raw = d.stringArray(forKey: PrefKey.enabledProviders) ?? []
             let ids = raw.compactMap(ProviderID.init(rawValue:))
             // Never leave the panel with nothing to show.
-            return ids.isEmpty ? Set(ProviderID.allCases) : Set(ids)
+            return ids.isEmpty ? Set(ProviderID.allCases.filter { $0 != .copilot }) : Set(ids)
         }
         set { d.set(newValue.map(\.rawValue), forKey: PrefKey.enabledProviders) }
     }

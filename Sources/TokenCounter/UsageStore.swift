@@ -35,6 +35,8 @@ final class UsageStore: ObservableObject {
         .claude: ClaudeProvider(),
         .codex: CodexProvider(),
         .cursor: CursorProvider(),
+        .gemini: GeminiProvider(),
+        .copilot: CopilotProvider(),
     ]
     private let queue = DispatchQueue(label: "com.akshaybengani.tokencounter.scan", qos: .utility)
     private var timer: Timer?
@@ -55,6 +57,13 @@ final class UsageStore: ObservableObject {
     var orderedProviders: [ProviderID] { ProviderID.allCases }
 
     var activeProviders: [ProviderID] { orderedProviders.filter { enabled.contains($0) } }
+
+    /// Enabled providers that actually report token counts. A provider reporting
+    /// `.unavailable` is shown in the panel but kept out of every total, so an absent
+    /// figure never reads as zero usage.
+    var countingProviders: [ProviderID] {
+        activeProviders.filter { snapshot($0).quality != .unavailable }
+    }
 
     func snapshot(_ id: ProviderID) -> ProviderSnapshot {
         snapshots[id] ?? ProviderSnapshot(id: id)
@@ -87,11 +96,11 @@ final class UsageStore: ObservableObject {
     // MARK: - Combined figures
 
     var combinedUsed: Int {
-        activeProviders.reduce(0) { $0 + used($1) }
+        countingProviders.reduce(0) { $0 + used($1) }
     }
 
     var combinedCounts: TokenCounts {
-        activeProviders.reduce(TokenCounts()) { $0 + counts($1) }
+        countingProviders.reduce(TokenCounts()) { $0 + counts($1) }
     }
 
     var combinedRawFraction: Double {
@@ -126,7 +135,7 @@ final class UsageStore: ObservableObject {
         var out: [RingSegment] = []
         var offset = 0
         let target = max(1, combinedTarget)
-        for id in activeProviders {
+        for id in countingProviders {
             let value = used(id)
             guard value > 0 else { continue }
             let start = Double(offset) / Double(target)

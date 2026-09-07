@@ -34,6 +34,8 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable {
     case claude
     case codex
     case cursor
+    case gemini
+    case copilot
 
     var id: String { rawValue }
 
@@ -42,6 +44,8 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable {
         case .claude: return "Claude Code"
         case .codex:  return "Codex"
         case .cursor: return "Cursor"
+        case .gemini: return "Gemini CLI"
+        case .copilot: return "Copilot"
         }
     }
 
@@ -51,6 +55,8 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable {
         case .claude: return "Claude"
         case .codex:  return "Codex"
         case .cursor: return "Cursor"
+        case .gemini: return "Gemini"
+        case .copilot: return "Copilot"
         }
     }
 
@@ -59,6 +65,8 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable {
         case .claude: return Color(red: 0.93, green: 0.55, blue: 0.24)
         case .codex:  return Color(red: 0.30, green: 0.78, blue: 0.62)
         case .cursor: return Color(red: 0.45, green: 0.60, blue: 0.95)
+        case .gemini: return Color(red: 0.68, green: 0.48, blue: 0.92)
+        case .copilot: return Color(red: 0.55, green: 0.58, blue: 0.64)
         }
     }
 }
