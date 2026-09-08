@@ -29,6 +29,8 @@ final class PaletteTests: XCTestCase {
     }
 
     func testEveryProviderIsADistinctColourInBothAppearances() throws {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-25")
+
         for dark in [false, true] {
             var seen: [(ProviderID, (r: CGFloat, g: CGFloat, b: CGFloat))] = []
             for id in ProviderID.allCases {
@@ -48,6 +50,8 @@ final class PaletteTests: XCTestCase {
     /// A colour that resolves the same in both appearances is not theme-aware, which
     /// was the drift that started this.
     func testEveryColourResolvesDifferentlyPerAppearance() throws {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-25")
+
         var checked = 0
         for id in ProviderID.allCases {
             let light = try XCTUnwrap(rgb(id.tint, dark: false))
@@ -67,6 +71,8 @@ final class PaletteTests: XCTestCase {
     /// Red is the failure hue. A provider must not wear it, or a legend dot would
     /// read as an alarm.
     func testNoProviderWearsTheFailureHue() throws {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-25")
+
         let over = try XCTUnwrap(rgb(UsageLevel.over.color, dark: true))
         for id in ProviderID.allCases {
             let tint = try XCTUnwrap(rgb(id.tint, dark: true))

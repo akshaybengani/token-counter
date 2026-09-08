@@ -79,6 +79,17 @@ validator is not optional.
 every scan, deliberately, so nothing depends on the app being awake at midnight. An
 unobserved day and a zero day are different states and the chart draws both.
 
+**Before you run the suite with an emission key.** The tests report which acceptance
+criteria they verify to `akshay/personal/specs/spec-26`. Get a key with the
+`provision_ac_emission` MCP tool, pass it inline for one run
+(`MEMEX_EMIT_KEY=... swift test`), and never write it to a file: it is spec-scoped and
+expires in about two hours. Without a key the suite still passes and the emitter warns.
+
+**Never let the mutation check emit.** It breaks a guard and expects the test to go
+red, so its failures are manufactured. `tools/mutation-check.py` sets
+`MEMEX_EMIT=false` for exactly that reason. Removing it marks real acceptance criteria
+as failing off synthetic failures, which is what happened the first time this ran.
+
 **Before you add a dependency.** There are none, and the README's privacy claims are
 checkable partly because of that. Adding one is a decision recorded on spec-26, not a
 silent edit to `Package.swift`.
@@ -97,6 +108,7 @@ silent edit to `Package.swift`.
 | `tools/uishot/` | Captures and drives the real settings window |
 | `tools/check.sh` | Every gate in one run |
 | `tools/icongen/` | Renders the app icon |
+| `Tests/.../ACEmission.swift` | Hand-rolled AC emitter; the one place that posts results |
 
 ## Local how-to
 

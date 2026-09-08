@@ -17,6 +17,8 @@ final class DailyHistoryTests: XCTestCase {
     /// accumulate. This is the property that lets the app write continuously instead
     /// of relying on a single write at midnight it might be asleep for.
     func testRecordingTheSameDayTwiceReplacesRatherThanAdds() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-23")
+
         let f = Fixture("history-upsert")
         let history = DailyHistory(stateDirectory: f.stateDirectory)
 
@@ -30,6 +32,8 @@ final class DailyHistoryTests: XCTestCase {
 
     /// Crossing midnight leaves yesterday intact and starts a new row.
     func testCrossingMidnightKeepsYesterdayAndStartsToday() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-23")
+
         let f = Fixture("history-midnight")
         let history = DailyHistory(stateDirectory: f.stateDirectory)
 
@@ -47,6 +51,8 @@ final class DailyHistoryTests: XCTestCase {
     /// A day the app never ran is not the same as a quiet day, and the chart draws
     /// the difference.
     func testUnobservedDaysComeBackFlaggedRatherThanZero() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-24")
+
         let f = Fixture("history-gap")
         let history = DailyHistory(stateDirectory: f.stateDirectory)
 
@@ -64,6 +70,8 @@ final class DailyHistoryTests: XCTestCase {
     /// A provider that cannot report token counts must not be stored as a zero it
     /// did not earn.
     func testProvidersWithNoTokenDataAreNotStored() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-24")
+
         let f = Fixture("history-unavailable")
         let history = DailyHistory(stateDirectory: f.stateDirectory)
 
@@ -82,6 +90,8 @@ final class DailyHistoryTests: XCTestCase {
     /// The total honours the cache-read setting and the provider selection, the same
     /// way the panel does.
     func testTotalHonoursCacheReadsAndProviderSelection() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-10")
+
         let f = Fixture("history-total")
         let history = DailyHistory(stateDirectory: f.stateDirectory)
 
@@ -99,6 +109,8 @@ final class DailyHistoryTests: XCTestCase {
 
     /// History survives a relaunch, which is the whole point of writing it down.
     func testHistoryPersistsAcrossInstances() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-23")
+
         let f = Fixture("history-persist")
         DailyHistory(stateDirectory: f.stateDirectory)
             .record(day: "2026-09-07", snapshots: [.claude: snapshot(.claude, input: 42)])

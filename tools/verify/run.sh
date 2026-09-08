@@ -19,7 +19,7 @@ trap 'rm -rf "$WORK"' EXIT
 export TOKEN_COUNTER_STATE_DIR="$WORK/state"
 
 echo "==> Reference (Python)"
-python3 tools/verify/reference.py "$CUTOFF"
+python3 tools/verify/reference.py "$CUTOFF" | tee "$WORK/reference.txt"
 
 echo
 echo "==> Providers (Swift)"
@@ -29,7 +29,15 @@ cp Sources/TokenCounter/Providers/*.swift "$WORK/"
 cp Sources/TokenCounter/Palette.swift "$WORK/"
 cp tools/verify/main.swift "$WORK/"
 swiftc -O "$WORK"/*.swift -o "$WORK/verify"
-"$WORK/verify" "$CUTOFF"
+"$WORK/verify" "$CUTOFF" | tee "$WORK/providers.txt"
+
+echo
+echo "==> Comparison"
+mkdir -p .build
+python3 tools/verify/compare.py "$WORK/reference.txt" "$WORK/providers.txt" \
+    ".build/verify-result.json" "$CUTOFF"
+STATUS=$?
 
 echo
 echo "The running app's state was not touched."
+exit $STATUS

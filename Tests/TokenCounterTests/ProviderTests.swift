@@ -9,6 +9,8 @@ final class ClaudeProviderTests: XCTestCase {
     /// happened, so the same call appears in more than one transcript. Counting
     /// records rather than calls roughly doubles the total.
     func testSameCallInTwoTranscriptsCountsOnce() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("claude-dupe")
         let now = Date()
         let stamp = TestDay.iso(now)
@@ -28,6 +30,8 @@ final class ClaudeProviderTests: XCTestCase {
     /// Two genuinely different calls must both count, so the dedupe key is not
     /// collapsing everything.
     func testDistinctCallsBothCount() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("claude-distinct")
         let now = Date()
         f.write("proj/one.jsonl",
@@ -44,6 +48,8 @@ final class ClaudeProviderTests: XCTestCase {
     /// A transcript being written to right now ends mid-line. That fragment must be
     /// left for the next scan rather than parsed as truncated JSON or skipped.
     func testHalfWrittenTrailingLineIsPickedUpLater() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-20")
+
         let f = Fixture("claude-partial")
         let now = Date()
         let complete = Rec.claude(id: "a", request: "r1", at: TestDay.iso(now), input: 5, output: 5)
@@ -66,6 +72,8 @@ final class ClaudeProviderTests: XCTestCase {
 
     /// The byte cursor must not re-count what it has already read.
     func testAppendedRecordsCountOnceAcrossScans() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-19")
+
         let f = Fixture("claude-append")
         let now = Date()
         let provider = ClaudeProvider(root: f.dataDirectory, stateDirectory: f.stateDirectory)
@@ -83,6 +91,8 @@ final class ClaudeProviderTests: XCTestCase {
     /// A record one second before local midnight belongs to yesterday; one second
     /// after belongs to today.
     func testMidnightBoundaryIsExclusiveOfYesterday() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-17")
+
         let f = Fixture("claude-midnight")
         let now = Date()
         let midnight = TestDay.start(now)
@@ -104,6 +114,8 @@ final class ClaudeProviderTests: XCTestCase {
     /// counts reset, but the byte cursors must survive, because anything past a
     /// cursor can only belong to the new day.
     func testDayRolloverResetsCountsButKeepsCursors() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("claude-rollover")
         let now = Date()
         let provider = ClaudeProvider(root: f.dataDirectory, stateDirectory: f.stateDirectory)
@@ -120,9 +132,38 @@ final class ClaudeProviderTests: XCTestCase {
         XCTAssertEqual(next.counts.input, 0)
     }
 
+    /// A transcript replaced with a shorter one leaves the stored offset past its
+    /// end. Reading from there would skip the new content silently, so the cursor
+    /// has to restart from zero.
+    func testFileThatShrankRestartsFromZero() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-20")
+
+        let f = Fixture("claude-truncated")
+        let now = Date()
+        let provider = ClaudeProvider(root: f.dataDirectory, stateDirectory: f.stateDirectory)
+
+        // A long file, fully consumed, so the cursor sits at its end.
+        var lines = ""
+        for index in 0..<20 {
+            lines += Rec.claude(id: "a\(index)", request: "r\(index)", at: TestDay.iso(now), input: 1, output: 0) + "\n"
+        }
+        f.write("proj/a.jsonl", lines)
+        let first = provider.scan(dayStart: TestDay.start(now), dayKey: TestDay.key(now))
+        XCTAssertEqual(first.counts.calls, 20)
+
+        // Replaced by a shorter file: fewer bytes than the offset already recorded.
+        f.write("proj/a.jsonl", Rec.claude(id: "fresh", request: "rf", at: TestDay.iso(now), input: 7, output: 0) + "\n")
+        let second = provider.scan(dayStart: TestDay.start(now), dayKey: TestDay.key(now))
+
+        XCTAssertEqual(second.counts.calls, 21, "the replaced file is read from the start, not skipped")
+        XCTAssertEqual(second.counts.input, 20 + 7)
+    }
+
     /// A file untouched today cannot hold today's records, so its bytes are skipped
     /// outright. This is what keeps a cold scan proportional to the day's writing.
     func testFileNotTouchedTodayIsSkipped() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-19")
+
         let f = Fixture("claude-stale")
         let now = Date()
         f.write("proj/old.jsonl", Rec.claude(id: "a", request: "r1", at: TestDay.iso(now), input: 999, output: 0) + "\n")
@@ -135,6 +176,8 @@ final class ClaudeProviderTests: XCTestCase {
     }
 
     func testMissingRootReportsNotInstalled() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-12")
+
         let f = Fixture("claude-absent")
         let snapshot = ClaudeProvider(
             root: f.root.appendingPathComponent("nope"),
@@ -151,6 +194,8 @@ final class CodexProviderTests: XCTestCase {
     /// Codex emits the same token_count twice per turn. Summing the per-turn field
     /// double counts, which is why each rise in the cumulative total is banked instead.
     func testRepeatedIdenticalEventsCountOnce() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("codex-repeat")
         let now = Date()
         let stamp = TestDay.iso(now)
@@ -169,6 +214,8 @@ final class CodexProviderTests: XCTestCase {
 
     /// Only the increase is banked, so a rising cumulative total is not re-added.
     func testOnlyTheRiseInTheCumulativeTotalIsBanked() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("codex-rise")
         let now = Date()
         let stamp = TestDay.iso(now)
@@ -191,6 +238,8 @@ final class CodexProviderTests: XCTestCase {
     /// delta check, but a partial one slips through it and produces a negative cache
     /// read and an inflated input, because the cached delta is subtracted from input.
     func testPartialDropRebaselinesInsteadOfGoingNegative() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("codex-drop")
         let now = Date()
         let stamp = TestDay.iso(now)
@@ -213,6 +262,8 @@ final class CodexProviderTests: XCTestCase {
 
     /// A whole-figure drop must also contribute nothing negative.
     func testWholeFigureDropContributesNothingNegative() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("codex-drop-all")
         let now = Date()
         let stamp = TestDay.iso(now)
@@ -231,6 +282,9 @@ final class CodexProviderTests: XCTestCase {
     /// A session that began yesterday must not dump its whole history into today on
     /// the first scan. Deltas are tracked throughout; only today's are banked.
     func testSessionStartedYesterdayOnlyBanksTodaysPortion() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-17")
+        tagAc("akshay/personal/specs/spec-26/acs/ac-18")
+
         let f = Fixture("codex-straddle")
         let now = Date()
         let midnight = TestDay.start(now)
@@ -255,6 +309,8 @@ final class GeminiProviderTests: XCTestCase {
     /// Gemini's total is input + output + thoughts + tool, with cached a slice of
     /// input. The mapping must preserve that total exactly.
     func testMappingPreservesGeminisOwnTotal() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-22")
+
         let f = Fixture("gemini-total")
         let now = Date()
         let message = Rec.geminiMessage(
@@ -275,6 +331,8 @@ final class GeminiProviderTests: XCTestCase {
 
     /// A fully cached prompt must leave no negative input.
     func testFullyCachedPromptLeavesNoNegativeInput() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-22")
+
         let f = Fixture("gemini-cached")
         let now = Date()
         let message = Rec.geminiMessage(
@@ -292,6 +350,8 @@ final class GeminiProviderTests: XCTestCase {
     /// Gemini rewrites the whole document as a session grows, so a re-read must count
     /// only the new messages. That is what the id dedupe is for.
     func testRewrittenSessionCountsOnlyNewMessages() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-19")
+
         let f = Fixture("gemini-rewrite")
         let now = Date()
         let provider = GeminiProvider(root: f.dataDirectory, stateDirectory: f.stateDirectory)
@@ -331,6 +391,8 @@ final class CopilotProviderTests: XCTestCase {
     /// Copilot records no token counts, and that is different from recording zero.
     /// The grade is what keeps it out of every total.
     func testReportsUnavailableRatherThanZero() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-11")
+
         let snapshot = CopilotProvider().scan(dayStart: TestDay.start(Date()), dayKey: TestDay.key(Date()))
         if snapshot.installed {
             XCTAssertEqual(snapshot.quality, .unavailable)
@@ -344,6 +406,8 @@ final class CopilotProviderTests: XCTestCase {
 final class TokenCountsTests: XCTestCase {
 
     func testCacheReadsAreExcludedUnlessAskedFor() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-10")
+
         let c = TokenCounts(input: 1, output: 2, cacheWrite: 4, cacheRead: 8_000, calls: 1)
         XCTAssertEqual(c.total(includeCacheReads: false), 7)
         XCTAssertEqual(c.total(includeCacheReads: true), 8_007)
@@ -356,6 +420,8 @@ final class TokenCountsTests: XCTestCase {
     }
 
     func testLevelBandsMatchTheDocumentedThresholds() {
+        tagAc("akshay/personal/specs/spec-26/acs/ac-13")
+
         XCTAssertEqual(UsageLevel(fraction: 0.0), .low)
         XCTAssertEqual(UsageLevel(fraction: 0.59), .low)
         XCTAssertEqual(UsageLevel(fraction: 0.60), .medium)

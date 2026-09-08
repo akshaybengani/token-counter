@@ -4,6 +4,7 @@
 std-14 cl-3 and std-5 cl-6: a test that stays green with the guard removed is not
 a regression guard. Every mutation below must produce a failing named test.
 """
+import os
 import pathlib
 import subprocess
 import sys
@@ -113,9 +114,15 @@ MUTATIONS = [
 
 
 def run_test(name):
+    # Emission OFF for these runs. The failures here are manufactured on purpose:
+    # a guard is broken and the test is EXPECTED to go red. Reporting them would
+    # mark the acceptance criteria as genuinely failing, which is exactly what
+    # happened the first time this ran with a key in the environment. This is the
+    # narrow, deliberate dry run MEMEX_EMIT=false exists for.
+    env = {**os.environ, "MEMEX_EMIT": "false"}
     result = subprocess.run(
         ["swift", "test", "--filter", name],
-        capture_output=True, text=True,
+        capture_output=True, text=True, env=env,
     )
     return result.returncode == 0, result.stdout + result.stderr
 

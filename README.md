@@ -178,7 +178,11 @@ Two details make that safe. A read stops at the last newline in the file, so a h
 
 Every claim below is one you can check without taking my word for it.
 
-**It makes no network calls.** `grep -rE "URLSession|import Network" Sources/` returns nothing, `Package.swift` declares no dependencies, and `otool -L` on the built binary lists no networking framework. The caveat in the same breath: the app isn't sandboxed and is signed ad-hoc, so macOS isn't enforcing any of this. You're trusting a binary you built from this source a minute ago. The cost is that you have to build it yourself, and what makes that tolerable is that there are 1,715 lines of Swift here and nothing pulled in from anywhere else.
+**The app makes no network calls.** `grep -rE "URLSession|import Network" Sources/` returns nothing, `Package.swift` declares no dependencies, and `otool -L` on the built binary lists no networking framework. A test enforces it, so it cannot rot back.
+
+Read that claim precisely, because the repository is not network-free: the **test** target posts test results to a Memex workspace, so it does use `URLSession`. That code lives in `Tests/`, never compiles into the app, and only runs when you run the suite with a key set. The claim is about `Sources/`, which is what ships, and the test that guards it is scoped there deliberately.
+
+The caveat in the same breath: the app isn't sandboxed and is signed ad-hoc, so macOS isn't enforcing any of this. You're trusting a binary you built from this source a minute ago. The cost is that you have to build it yourself, and what makes that tolerable is that there are under 2,000 lines of Swift here and nothing pulled in from anywhere else.
 
 **It reads token counts and timestamps, never the text of your conversations.** The complete set of fields the code reads is `input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`, `total_token_usage`, `tokens` (Gemini's `input`, `output`, `cached`, `thoughts`, and `tool`), `tokenCount`, `message.id`, `requestId`, `timestamp`, and `createdAt`, plus a `count(*)` over Copilot's turns. No field holding message content is read anywhere, which you can confirm by grepping `Sources/` for `"content"` or `"text"`.
 
@@ -230,6 +234,7 @@ Every switch in that first capture is drawn in its off position, which is an art
 | `tools/mutation-check.py` | Breaks each guard to prove the tests can fail |
 | `tools/uishot/` | Captures the settings window, including AppKit-backed controls |
 | `tools/check.sh` | Runs every gate and fails loudly |
+| `Tests/TokenCounterTests/ACEmission.swift` | Reports which acceptance criteria the tests verify |
 | `tools/make-dmg.sh` | Packages the built app for download |
 
 ## Running it
@@ -255,9 +260,9 @@ Turn on **Open at login** in settings to have it start with your Mac. That uses 
 
 Three layers, because the figures fail quietly rather than loudly.
 
-**31 unit tests** over the provider rules and the daily store, run with `swift test`. They use fixtures in the repository, never your own transcripts, so they can exercise cases your data happens not to contain: the same call logged in two transcripts, a Codex total that drops mid-session, a Gemini prompt that is entirely cache, a file ending mid-line, a record one second either side of local midnight, and a day rollover.
+**47 unit tests** over the provider rules, the daily store, the aggregation arithmetic and the palette, run with `swift test`. They use fixtures in the repository, never your own transcripts, so they can exercise cases your data happens not to contain: the same call logged in two transcripts, a Codex total that drops mid-session, a Gemini prompt that is entirely cache, a file ending mid-line, a record one second either side of local midnight, and a day rollover.
 
-**A mutation check**, `python3 tools/mutation-check.py`, which breaks each of 11 guards in turn and requires a named test to go red. A suite that passes proves nothing on its own; this is what shows it can fail.
+**A mutation check**, `python3 tools/mutation-check.py`, which breaks each of 14 guards in turn and requires a named test to go red. A suite that passes proves nothing on its own; this is what shows it can fail.
 
 ```bash
 ./tools/check.sh                    # build, tests, mutation check, harness
@@ -266,12 +271,12 @@ Three layers, because the figures fail quietly rather than loudly.
 Or one at a time:
 
 ```bash
-swift test                          # 31 tests
-python3 tools/mutation-check.py     # 11 guards, each must be caught
+swift test                          # 47 tests
+python3 tools/mutation-check.py     # 14 guards, each must be caught
 ./tools/verify/run.sh 2025-01-01    # every provider against an independent implementation
 ```
 
-**A differential harness**, which scans from a cutoff you choose and compares all 5 providers field by field against `reference.py`, an independent implementation of the same rules in another language. An error has to be made identically twice, in two languages, to survive. Gemini gets a second check on top: the mapping's output has to equal the sum of Gemini's own `total` fields, which it does at 159,515.
+**A differential harness**, which scans from a cutoff you choose and compares all 5 providers field by field against `reference.py`, an independent implementation of the same rules in another language. An error has to be made identically twice, in two languages, to survive. It compares the two outputs itself and exits non-zero on a mismatch, rather than printing two blocks for you to read: only Claude Code is allowed to differ, and only upward, because the session running the harness spends tokens while it runs. Gemini gets a second check on top: the mapping's output has to equal the sum of Gemini's own `total` fields, which it does at 159,515.
 
 The interface is checked two ways. `ImageRenderer` draws the panel, which is where the images above come from. It cannot draw a `Form` or a segmented `Picker`, both of which come out as a placeholder, so `tools/uishot/run.sh` captures the settings window by asking its real view hierarchy to draw itself with `cacheDisplay`, then drives the controls through the AppKit objects behind them and checks the pane actually changed.
 

@@ -21,10 +21,12 @@ step() {
     fi
 }
 
+# The harness runs before the tests, because one of them asserts its verdict and
+# skips on a stale one.
 step "Release build"        swift build -c release
+step "Differential harness" ./tools/verify/run.sh "${1:-2025-01-01}"
 step "Unit tests"           swift test
 step "Mutation check"       python3 tools/mutation-check.py
-step "Differential harness" ./tools/verify/run.sh "${1:-2025-01-01}"
 
 printf '\n'
 if [ ${#FAILED[@]} -gt 0 ]; then

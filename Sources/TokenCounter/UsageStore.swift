@@ -68,7 +68,7 @@ final class UsageStore: ObservableObject {
     /// `.unavailable` is shown in the panel but kept out of every total, so an absent
     /// figure never reads as zero usage.
     var countingProviders: [ProviderID] {
-        activeProviders.filter { snapshot($0).quality != .unavailable }
+        Aggregate.countingProviders(order: orderedProviders, enabled: enabled, snapshots: snapshots)
     }
 
     func snapshot(_ id: ProviderID) -> ProviderSnapshot {
@@ -102,11 +102,11 @@ final class UsageStore: ObservableObject {
     // MARK: - Combined figures
 
     var combinedUsed: Int {
-        countingProviders.reduce(0) { $0 + used($1) }
+        Aggregate.combinedUsed(providers: countingProviders, snapshots: snapshots, includeCacheReads: includeCacheReads)
     }
 
     var combinedCounts: TokenCounts {
-        countingProviders.reduce(TokenCounts()) { $0 + counts($1) }
+        Aggregate.combinedCounts(providers: countingProviders, snapshots: snapshots)
     }
 
     var combinedRawFraction: Double {
@@ -138,19 +138,15 @@ final class UsageStore: ObservableObject {
 
     /// Stacked arcs across the enabled providers, sized against the combined target.
     var combinedSegments: [RingSegment] {
-        var out: [RingSegment] = []
-        var offset = 0
-        let target = max(1, combinedTarget)
-        for id in countingProviders {
-            let value = used(id)
-            guard value > 0 else { continue }
-            let start = Double(offset) / Double(target)
-            let end = Double(offset + value) / Double(target)
-            guard start < 1 else { break }
-            out.append(RingSegment(id: id.rawValue, start: start, end: min(1, end), color: id.tint))
-            offset += value
+        Aggregate.segments(
+            providers: countingProviders,
+            snapshots: snapshots,
+            includeCacheReads: includeCacheReads,
+            target: combinedTarget,
+            tint: { ProviderTint(id: $0.rawValue) }
+        ).map { segment in
+            RingSegment(id: segment.id.rawValue, start: segment.start, end: segment.end, color: segment.id.tint)
         }
-        return out
     }
 
     // MARK: - Refresh
