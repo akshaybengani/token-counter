@@ -85,3 +85,46 @@ final class MenuTests: XCTestCase {
         }
     }
 }
+
+/// Closes the gap between "the settings view renders" and "choosing Settings opens
+/// it". The capture harness in tools/uishot builds its own window, so it proves the
+/// panes but not the plumbing that puts them on screen. These drive the same action
+/// the menu item targets.
+@MainActor
+final class SettingsWindowTests: XCTestCase {
+
+    func testTheMenuRoutesSettingsToTheOpenAction() {
+        let delegate = AppDelegate()
+        withExtendedLifetime(delegate) {
+            let menu = delegate.buildMenu()
+            let item = menu.items.first { $0.title.hasPrefix("Settings") }
+            XCTAssertNotNil(item, "no Settings item in the menu")
+            XCTAssertEqual(item?.action, #selector(AppDelegate.showSettings))
+            XCTAssertTrue(item?.target === delegate, "the Settings item points at nothing")
+            XCTAssertEqual(item?.keyEquivalent, ",", "the conventional shortcut is missing")
+        }
+    }
+
+    /// Opening builds a window of the shape the panes were laid out for, and opening
+    /// twice reuses it rather than stacking a second one.
+    func testOpeningSettingsProducesOneWindowOfTheExpectedShape() throws {
+        let delegate = AppDelegate()
+        try withExtendedLifetime(delegate) {
+            delegate.openSettings()
+            let window = try XCTUnwrap(delegate.settingsWindowForTesting, "no window was created")
+
+            // The window and the view must agree on one size. They used to be two
+            // hardcoded pairs of numbers in two files.
+            XCTAssertEqual(window.contentView?.frame.width ?? 0, SettingsView.windowSize.width, accuracy: 1)
+            XCTAssertEqual(window.contentView?.frame.height ?? 0, SettingsView.windowSize.height, accuracy: 1)
+            XCTAssertNotNil(window.contentView, "the window has no content view")
+            XCTAssertTrue(window.isVisible, "the window was created but never shown")
+
+            delegate.openSettings()
+            XCTAssertTrue(delegate.settingsWindowForTesting === window, "a second window was opened")
+
+            delegate.closeSettings()
+            XCTAssertFalse(window.isVisible, "closing left the window on screen")
+        }
+    }
+}

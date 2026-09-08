@@ -247,17 +247,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Settings
 
-    @objc private func showSettings() { openSettings() }
+    @objc func showSettings() { openSettings() }
 
     func openSettings() {
         if settingsWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 520, height: 700),
+                contentRect: NSRect(origin: .zero, size: SettingsView.windowSize),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false
             )
             window.title = "Token Counter"
+            // A plain hosting view here, unlike the panel. This window's size is
+            // fixed and declared by SettingsView.windowSize, which the contentRect
+            // above is built from, so there is nothing to measure. A hosting
+            // controller would defer sizing to the first layout pass and report 0x0
+            // until then, which is the race that once collapsed the panel.
             window.contentView = NSHostingView(rootView: SettingsView().environmentObject(store))
             window.isReleasedWhenClosed = false
             window.center()
@@ -266,6 +271,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
+
+    /// Read-only view of the settings window, for the tests that assert the open and
+    /// close path. Deliberately not a setter.
+    var settingsWindowForTesting: NSWindow? { settingsWindow }
 
     func closeSettings() {
         settingsWindow?.orderOut(nil)

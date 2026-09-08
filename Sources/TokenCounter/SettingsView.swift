@@ -225,6 +225,13 @@ private struct GeneralSettings: View {
 /// the window-capture harness in tools/uishot confirms comes through as a real
 /// NSSegmentedControl in this exact context.
 struct SettingsView: View {
+    /// The one place this window's size is written down.
+    ///
+    /// The view declares its own frame and the window is built to a contentRect, so
+    /// before this constant existed the same two numbers lived in two files and had
+    /// to agree by hand. A test asserts they still do.
+    static let windowSize = CGSize(width: 520, height: 700)
+
     @EnvironmentObject var store: UsageStore
     @State private var pane = Pane.general
 
@@ -271,7 +278,7 @@ struct SettingsView: View {
             }
             .padding(12)
         }
-        .frame(width: 520, height: 700)
+        .frame(width: Self.windowSize.width, height: Self.windowSize.height)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 }
