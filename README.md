@@ -1,18 +1,28 @@
+<div align="center">
+
+<img src="docs/icon.png" width="104" alt="Token Counter" />
+
 # Token Counter
 
-**A macOS desktop widget that shows how many tokens you've spent today across Claude Code, Codex, Gemini CLI, and Cursor, drawn as a ring against a daily target you set.**
+**Today's token spend across Claude Code, Codex, Gemini CLI and Cursor, as a ring against a daily target you set.**
 
-It isn't a billing tool, and it never contacts a provider's API. Every figure comes from files those tools have already written to your disk.
+Not a billing tool, and not a dashboard you have to remember to open. It reads files
+those tools already wrote to your disk, makes no network calls, and sits on your
+desktop where you'll see it.
 
-![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black)
-![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange)
-![Dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen)
-![Network: none](https://img.shields.io/badge/network-none-brightgreen)
-![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
+[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-C25708)](#running-it)
+[![Swift](https://img.shields.io/badge/Swift-5.9-C25708)](#running-it)
+[![Dependencies](https://img.shields.io/badge/dependencies-none-C25708)](Package.swift)
+[![Network](https://img.shields.io/badge/network-none-C25708)](#privacy-and-what-it-costs)
+[![Licence](https://img.shields.io/badge/licence-MIT-C25708)](LICENSE)
+
+</div>
+
+---
 
 <img src="docs/panel-combined-dark.png" width="224" alt="Combined mode: one dial for every provider together"> <img src="docs/panel-separate-dark.png" width="224" alt="Per provider mode: one small dial for each"> <img src="docs/panel-combined-light.png" width="224" alt="The same panel in light mode">
 
-Both shots are real output. The providers reading 0 hadn't run that day, which is what an unused provider looks like.
+All three are real output. The providers reading 0 hadn't run that day, which is what an unused provider looks like.
 
 The panel is borderless and draggable, sits above your windows or behind them, and reads the figures again every 5 minutes. A menu bar item carries the same percentage. The count resets at local midnight.
 
@@ -76,7 +86,7 @@ The provider hues follow Okabe-Ito, and they're chosen with a validator rather t
 
 The obvious way to keep a daily history is to write the day's figure when the day ends. That loses a day whenever the Mac is asleep or shut down at midnight, which for a laptop is most nights.
 
-So today's row is rewritten on every scan instead. The write is an upsert keyed by the day, which makes it idempotent: scanning twice in a minute leaves one row, and when the clock passes midnight yesterday's row is already complete and today's simply starts. Nothing has to happen at midnight for the history to be right.
+So today's row is rewritten on every scan instead. The write is an upsert keyed by the day, which makes it idempotent: scanning twice in a minute leaves one row, and when the clock passes midnight yesterday's row is already complete and today's starts. Nothing has to happen at midnight for the history to be right.
 
 Two things the chart draws that a simpler store would flatten:
 

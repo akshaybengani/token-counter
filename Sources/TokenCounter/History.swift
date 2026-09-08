@@ -26,7 +26,7 @@ struct DailyRecord: Identifiable, Equatable {
 /// midnight. That is deliberate: a Mac asleep or shut down at midnight would miss a
 /// single scheduled write and lose the day, whereas an upsert of the current day is
 /// idempotent and always current. When the day changes, yesterday's row is already
-/// complete and today's simply starts.
+/// complete and today's starts.
 ///
 /// A day the app never ran is absent rather than zero, and the chart draws that
 /// difference.

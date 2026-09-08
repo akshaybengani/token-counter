@@ -12,17 +12,27 @@ let ringDiameter: CGFloat = 470
 let ringStroke: CGFloat = 92
 let filled: CGFloat = 0.72             // how much of the ring reads as used
 
-let yellow = Color(red: 0.961, green: 0.702, blue: 0.004)   // #F5B301
+/// The dial's orange, sampled from the panel screenshot in the README: it is the
+/// `high` progress band. White on that measures 2.34:1, and at 32px the ring blurs
+/// into the plate, so the plate takes the same hue two steps deeper at 4.51:1 and the
+/// sampled orange stays in the icon as the remainder arc. Both were rendered and
+/// compared at 32px before choosing. This mirrors Medstock, which puts a white glyph
+/// and a light cyan fill on a deep teal plate at 6.16:1.
+let dialOrange = Color(red: 0.988, green: 0.549, blue: 0.239)   // #FC8C3D
+let plateOrange = Color(red: 0.761, green: 0.341, blue: 0.031)  // #C25708
+
+let plate = plateOrange
+let remainder = dialOrange
 
 struct Icon: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: plateCorner, style: .continuous)
-                .fill(yellow)
+                .fill(plate)
                 .frame(width: canvas - plateInset * 2, height: canvas - plateInset * 2)
 
             Circle()
-                .stroke(Color.white.opacity(0.30), lineWidth: ringStroke)
+                .stroke(remainder, lineWidth: ringStroke)
                 .frame(width: ringDiameter, height: ringDiameter)
 
             Circle()

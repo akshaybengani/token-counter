@@ -7,8 +7,8 @@ agents as a ring against a daily target. It reads files those tools have already
 locally, makes no network calls, and has no dependencies.
 
 The authoritative record of why anything here is the way it is lives in Memex, not in
-this file: **`akshay/personal/specs/spec-26`**. Read it before changing behaviour. Its
-eight resolved decisions are what settle the questions this codebase keeps raising.
+this file: **`akshay/personal/specs/spec-26`**. Read it before changing behaviour. Its ten
+resolved decisions are what settle the questions this codebase keeps raising.
 
 The README is written for a stranger and carries the design argument. This file is for
 an agent that has to work here.
@@ -27,9 +27,11 @@ Rules live in the standards, not here. Fetch with `get_doc({ref})`.
 | `akshay/personal/standards/std-23`, `std-24` | All prose and interface copy |
 | `akshay/personal/standards/std-27` | Colour and spacing tokens rather than literals |
 
-Two drifts are already filed against these, so do not re-report them: std-29 cl-2 is
-closed by t-1, std-5 by t-2. Check the Spec's task list before assuming something is
-unaddressed.
+Three drifts have been filed against these and all three are resolved: std-29 cl-2 (a
+palette that was not theme-aware), std-5 (no test target), and std-29's categorical
+separation (Cursor and Gemini indistinguishable under colour blindness). Check the
+Spec's task list before assuming something is unaddressed, and read a drift's
+resolution before re-filing it.
 
 ## Tripwires
 
